@@ -2,11 +2,11 @@ import json
 import os
 import sqlite3
 import uuid
+from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterator
 
 
 def _mongo_uri() -> str | None:
@@ -96,7 +96,7 @@ def _timestamp_string(timestamp: datetime | str) -> str:
 
 
 def save_idea(user_id: str, idea: str, analysis: dict) -> dict:
-    created_at = datetime.now(timezone.utc)
+    created_at = datetime.now(UTC)
     database = _mongo_database()
     if database is not None:
         database.saved_ideas.insert_one(
@@ -189,7 +189,7 @@ def save_analysis_messages(
     analysis: dict,
 ) -> str:
     conversation_id = analysis["id"]
-    created_at = datetime.now(timezone.utc)
+    created_at = datetime.now(UTC)
     assistant_content = json.dumps(analysis, ensure_ascii=False)
     database = _mongo_database()
     messages = [
