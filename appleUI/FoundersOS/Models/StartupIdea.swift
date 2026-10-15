@@ -51,10 +51,14 @@ final class StartupIdea {
     
     /// Tagline for the startup
     var tagline: String
-    
+
     /// Later features that should NOT be built yet
     var laterFeatures: [String]
-    
+
+    /// Feature names (matching `mvpFeatures` entries) the user has checked off.
+    /// The "Build Later" section is unlocked once this set covers every MVP item.
+    var completedMvpFeatures: [String]
+
     /// Initialize a new startup idea
     init(
         id: UUID = UUID(),
@@ -71,7 +75,8 @@ final class StartupIdea {
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         tagline: String = "",
-        laterFeatures: [String] = []
+        laterFeatures: [String] = [],
+        completedMvpFeatures: [String] = []
     ) {
         self.id = id
         self.title = title
@@ -88,6 +93,7 @@ final class StartupIdea {
         self.updatedAt = updatedAt
         self.tagline = tagline
         self.laterFeatures = laterFeatures
+        self.completedMvpFeatures = completedMvpFeatures
     }
     
     /// Status options for tracking startup progress

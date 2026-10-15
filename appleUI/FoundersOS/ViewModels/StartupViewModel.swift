@@ -99,6 +99,24 @@ class StartupViewModel: ObservableObject {
     var status: String {
         startupIdea?.status ?? "Idea"
     }
+
+    /// Names of MVP features the user has checked off as completed.
+    var completedMvpFeatures: [String] {
+        startupIdea?.completedMvpFeatures ?? []
+    }
+
+    /// "Build Later" is unlocked only after every Must-Have MVP feature is done.
+    var isLaterUnlocked: Bool {
+        let mvp = mvpFeatures
+        guard !mvp.isEmpty else { return false }
+        return mvp.allSatisfy { completedMvpFeatures.contains($0) }
+    }
+
+    /// Count of Must-Have features the user has finished.
+    var completedMvpCount: Int {
+        let mvp = mvpFeatures
+        return mvp.filter { completedMvpFeatures.contains($0) }.count
+    }
     
     // MARK: - Section Definitions
     
@@ -140,6 +158,50 @@ class StartupViewModel: ObservableObject {
     func updateStatus(_ newStatus: String, context: ModelContext) {
         guard let idea = startupIdea else { return }
         PersistenceService.shared.updateStatus(idea, to: newStatus, context: context)
+    }
+
+    /// Toggle an MVP feature's check-in state and persist the change.
+    ///
+    /// If no `StartupIdea` is bound yet (e.g. the user just generated a new
+    /// analysis and hasn't saved), this materializes one in the supplied
+    /// `ModelContext` and toggles into it. Tapping therefore always has
+    /// visible effect, even before the user hits Save.
+    /// - Parameters:
+    ///   - feature: The MVP feature name to toggle
+    ///   - context: The SwiftData model context
+    func toggleMvpFeature(_ feature: String, context: ModelContext) {
+        let idea: StartupIdea
+        if let existing = startupIdea {
+            idea = existing
+        } else if let analysis = analysis {
+            // Build a transient StartupIdea from the analysis and insert it
+            // into the same context. Save will later persist it for real.
+            var new = analysis.toStartupIdea()
+            new.rawIdea = rawIdea
+            new.createdAt = Date()
+            new.updatedAt = Date()
+            context.insert(new)
+            startupIdea = new
+            idea = new
+        } else {
+            return
+        }
+
+        var current = idea.completedMvpFeatures
+        if let idx = current.firstIndex(of: feature) {
+            current.remove(at: idx)
+        } else {
+            current.append(feature)
+        }
+        idea.completedMvpFeatures = current
+        idea.updatedAt = Date()
+        do {
+            try context.save()
+        } catch {
+            print("❌ Failed to save MVP toggle: \(error.localizedDescription)")
+        }
+        // Force a UI refresh for the freshly-mutated model.
+        objectWillChange.send()
     }
     
     /// Delete the startup
