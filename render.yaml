@@ -11,8 +11,8 @@ services:
     envVars:
       - key: MONGODB_URI
         sync: false
-      - key: MONGODB_DATABASE
-        value: founderos
+      - key: DATABASE_PATH
+        value: ./data/foundoros.sqlite3
       - key: CLERK_ISSUER
         sync: false
       - key: WEB_ORIGINS
