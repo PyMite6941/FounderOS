@@ -23,5 +23,3 @@ services:
         value: PyMite6941/FounderOS
       - key: PYTHONUNBUFFERED
         value: "1"
-      - key: _FORCE_REBUILD
-        value: "1"
