@@ -1,163 +1,68 @@
-# Vercel Hosting — FounderOS Web UI
+# FounderOS website deployment
 
-The FounderOS web UI can be deployed to Vercel in under 5 minutes. This guide covers the complete setup.
+The production website is [https://founder-os-gold-iota.vercel.app/](https://founder-os-gold-iota.vercel.app/).
+Vercel hosts the static site; the FastAPI backend runs as a separate service.
 
-## 🚀 One-Click Deploy
+## Vercel project settings
 
-[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/import/template)
-
-## Manual Deployment Steps
-
-### 1. Prepare the Repository
-
-Ensure your repo structure looks like this:
-
-```
-FounderOS/
-├── backend/          # FastAPI backend (separate deployment)
-├── appleUI/          # iOS client
-├── androidUI/        # Android client
-├── web/              # <-- Web UI (this folder)
-│   └── index.html    # Static web UI
-├── .gitignore
-├── LICENSE
-└── CONTRIBUTING.md
-```
-
-### 2. Vercel Dashboard Setup
-
-1. Go to [vercel.com](https://vercel.com) and sign in
-2. Click "New Project" → "Import Repository"
-3. Select the `FounderOS` repository
-4. Vercel will auto-detect it's a static site
-
-### 3. Configuration — Two Deployment Options
-
-**Option A: Static HTML (Easiest)**
-Vercel will auto-configure these settings:
+Configure the Vercel project to use this repository and set:
 
 | Setting | Value |
-|---------|-------|
-| **Framework** | None (Static HTML) |
-| **Build Command** | `npm run build` (or leave blank) |
-| **Publish Directory** | `web` |
-| **Root Directory** | `/home/pymite6941/services/local_storage/FounderOS` |
+| --- | --- |
+| Root Directory | `web` |
+| Framework Preset | Other |
+| Build Command | `npm run build` |
+| Output Directory | `.` |
 
-**Option B: Node.js + Express** 
-If you want the web UI to serve dynamically and have a backend API:
+Set these Vercel environment variables for Production and Preview as appropriate:
 
-| Setting | Value |
-|---------|-------|
-| **Framework** | Node.js (Express) |
-| **Build Command** | `npm run build && npm run start` |
-| **Publish Directory** | `web` |
-| **Root Directory** | `/home/pymite6941/services/local_storage/FounderOS` |
+| Variable | Value |
+| --- | --- |
+| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key for the selected Clerk application |
+| `API_BASE_URL` | HTTPS base URL of the deployed FastAPI backend, with no trailing slash |
 
-### 4. Environment Variables (Optional)
+`npm run build` writes a public `config.js` containing only the API base URL and Clerk publishable
+key. Do not add `CLERK_SECRET_KEY` to the static website's Vercel environment. The Express
+development server uses the Clerk secret key from its local `.env.local` file.
 
-If you want the web UI to connect to a backend:
+## Backend deployment
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `API_BASE` | Backend API URL | `http://127.0.0.1:8787` (local) or empty (production) |
+Deploy `backend/` as a separate Python 3.11+ service using the Dockerfile or the setup instructions
+in [`backend/README.md`](./backend/README.md). Configure:
 
-The web UI already handles this dynamically:
-- `window.location.hostname === 'localhost'` → uses `http://127.0.0.1:8787`
-- Otherwise → uses relative path (works with Vercel deployments)
+- `CLERK_ISSUER` from the selected Clerk instance; the backend derives its JWKS URL from this.
+- `DATABASE_PATH` on a mounted persistent volume. Saved ideas are stored in SQLite and will be
+  lost if the host's filesystem is ephemeral.
+- `WEB_ORIGINS` and `CLERK_AUTHORIZED_PARTIES` to include
+  `https://founder-os-gold-iota.vercel.app`.
+- `GITHUB_REPOSITORY=PyMite6941/FounderOS` for APK release discovery.
+- `IOS_DISTRIBUTION_URL` once an App Store or TestFlight listing exists.
 
-### 5. Custom Domain (Optional)
+The Android download is enabled only when the latest public GitHub Release contains an `.apk`
+asset. iOS installation is linked through Apple's App Store or TestFlight; a website cannot
+install a normally signed iOS app directly.
 
-1. In Vercel project → Settings → Domains
-2. Add your domain (e.g., `founderos.io`)
-3. Vercel will provide DNS configuration
+The website also links to both native source projects and a repository ZIP. Those links provide
+source code only and do not install the apps on a phone.
 
-## 📡 Backend Integration
+## Local development
 
-The web UI connects to the backend at `POST /v1/analyze`. For Vercel deployment:
+1. In `backend/`, copy `.env.example` to `.env`, set `CLERK_ISSUER`, then install and start the API:
 
-### Option A: Separate Backend on Vercel
+   ```powershell
+   .\install.ps1
+   .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+   ```
 
-1. Deploy the `backend/` FastAPI folder to Vercel as a separate project
-2. Note the Vercel URL (e.g., `https://founderos-backend.vercel.app`)
-3. Add environment variable in the Web UI project:
-   - `API_BASE=https://founderos-backend.vercel.app`
+2. In `web/`, preserve the Clerk CLI-generated `.env.local`. Set `CLERK_PUBLISHABLE_KEY` and
+   `CLERK_SECRET_KEY` there. Leave `API_BASE_URL` empty to use the local Express proxy:
 
-### Option B: Backend on Render/Docker
+   ```powershell
+   npm install
+   npm run dev
+   ```
 
-1. Deploy backend elsewhere (Render, Railway, Docker, etc.)
-2. Set `API_BASE` to your backend URL
-3. The web UI will automatically use it
+3. Open `http://localhost:3000`. The Express development server proxies `/health` and `/v1/*` to
+   the FastAPI server on port 8000.
 
-### Example API Base Configuration
-
-The web UI reads the API base at runtime:
-
-```javascript
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://127.0.0.1:8787'  // Local development
-  : '';  // Production - relative path (Vercel)
-```
-
-For Vercel-to-Vercel backend connection, set `API_BASE` in Vercel project settings.
-
-## 🛠️ Development Workflow
-
-### Local Development
-
-```bash
-# Start the web UI (open index.html in browser)
-open web/index.html
-
-# Or serve locally
-cd FounderOS/web
-npx serve .  # or: python3 -m http.web
-```
-
-### Testing Backend Connection
-
-The UI auto-checks backend availability on load:
-
-```javascript
-checkAPI().then(available => {
-  if (!available) {
-    showError('Backend API not running. Please start the backend server at http://127.0.0.1:8787');
-  }
-});
-```
-
-### Download Features
-
-Android/iOS download popups work immediately — they show setup information
-and simulate download flows. No backend required for the download UI itself.
-
-## 📦 Build & Deploy Checklist
-
-- [ ] Repository pushed to GitHub/GitLab
-- [ ] Vercel project created, importing `FounderOS`
-- [ ] Publish directory set to `web`
-- [ ] (Optional) `API_BASE` environment variable set for backend connection
-- [ ] Custom domain configured (if desired)
-- [ ] Test deployment: `vercel deploy` or visit the Vercel URL
-
-## 🐛 Known Limitations
-
-- Web UI is static HTML — no server-side processing
-- Backend must be running separately for idea analysis
-- Android APK download is simulated (shows setup info; real APK needs native build)
-- iOS App details show App Store/TestFlight info (actual app requires Apple Developer account)
-
-## ✅ Quick Test After Deploy
-
-Visit your Vercel URL and verify:
-
-1. ✓ Page loads without errors
-2. ✓ "Analyze Idea" form works (shows error if backend not running on localhost)
-3. ✓ "Mobile Apps" section displays Android and iOS cards
-4. ✓ Download buttons show setup popups
-5. ✓ Light/dark mode toggle works
-
----
-
-**Last updated:** 2026-10-15
-
-For issues, see: https://github.com/PyMite6941/FounderOS/issues
+Run backend tests from `backend/` with `.venv\Scripts\python.exe -m pytest`.

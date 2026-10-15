@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-device_name="${1:-Pixel_6_API_34}"
+device_name="${1:-}"
 
 sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
 if [[ -z "$sdk_root" ]]; then
@@ -31,6 +31,11 @@ if [[ -z "$avd_list" ]]; then
   echo "No Android Virtual Devices found. Create one in Android Studio first." >&2
   echo "Example: avdmanager create avd -n FounderOS -k 'system-images;android-34;google_apis;x86_64' -d pixel_6" >&2
   exit 1
+fi
+
+if [[ -z "$device_name" ]]; then
+  device_name="$(printf '%s\n' "$avd_list" | sed -n '1p')"
+  echo "No AVD specified; using the first available device: $device_name"
 fi
 
 if ! grep -Fxq -- "$device_name" <<< "$avd_list"; then

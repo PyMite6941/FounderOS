@@ -16,7 +16,8 @@ From PowerShell:
 .\start-emulator.ps1
 ```
 
-Optional: pass a device name explicitly.
+Without an argument, the script starts the first AVD listed by the Android SDK.
+Pass a device name to select a specific AVD.
 
 ```powershell
 .\start-emulator.ps1 -DeviceName "Pixel_6_API_34"
@@ -28,7 +29,8 @@ From macOS or Linux with Bash:
 bash ./start-emulator.sh
 ```
 
-Optional: pass an AVD name as the first argument.
+Without an argument, the script starts the first AVD listed by the Android SDK.
+Pass an AVD name as the first argument to select a specific one.
 
 ```bash
 bash ./start-emulator.sh "Pixel_6_API_34"

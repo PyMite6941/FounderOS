@@ -1,5 +1,5 @@
 param(
-    [string]$DeviceName = "Pixel_6_API_34"
+    [string]$DeviceName = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -23,6 +23,11 @@ if (-not $avdList -or $avdList.Count -eq 0) {
     Write-Warning "No Android Virtual Devices were found. Create one in Android Studio first."
     Write-Host "Example: avdmanager create avd -n 'FounderOS' -k 'system-images;android-34;google_apis;x86_64' -d 'pixel_6'"
     exit 1
+}
+
+if (-not $DeviceName) {
+    $DeviceName = $avdList[0].ToString().Trim()
+    Write-Host "No AVD specified; using the first available device: $DeviceName"
 }
 
 if ($avdList -notcontains $DeviceName) {
