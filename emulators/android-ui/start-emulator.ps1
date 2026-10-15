@@ -4,6 +4,15 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Auto-detect ANDROID_HOME if not set
+if (-not $env:ANDROID_HOME) {
+    $defaultSdk = Join-Path $env:LOCALAPPDATA "Android\Sdk"
+    if (Test-Path $defaultSdk) {
+        $env:ANDROID_HOME = $defaultSdk
+        Write-Host "Auto-detected ANDROID_HOME: $defaultSdk"
+    }
+}
+
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $androidSdkRoot = $env:ANDROID_HOME
 
