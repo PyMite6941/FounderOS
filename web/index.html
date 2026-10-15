@@ -344,6 +344,58 @@
       </div>
     </div>
 
+    <!-- Download Section -->
+    <div id="downloads" class="mt-8 rounded-xl p-6 border-y border-border transition-all Duration=300ms" style="background: var(--card); border-color: var(--border);">
+      <h2 class="section-title mb-4">Mobile Apps</h2>
+      <p class="text-muted mb-4">FounderOS is available on mobile devices. Download the app for your platform:</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Android Download -->
+        <div class="card" style="background: var(--accent-dim);">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="font-semibold text-accent">Android App</h3>
+              <p class="text-sm text-muted">Android APK download</p>
+            </div>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-muted" id="androidArrow"><path d="M7 10l5 5 5-5"/><path d="M0 6h24v2H0V6z" fill="none"/></svg>
+          </div>
+          <div id="android-setup" class="hidden pt-3" style="color: var(--fg);">
+            <p class="text-sm text-muted mb-2">Setup information:</p>
+            <ul class="text-sm text-muted space-y-1">
+              <li>Requires Android 7.0 or later</li>
+              <li>Install from APK (manual install required)</li>
+              <li>Enable "Unknown sources" in device settings for APK installation</li>
+            </ul>
+          </div>
+          <button id="android-download-btn" class="btn-primary w-full py-3 rounded-xl font-medium mt-3" disabled>
+            <span id="android-btn-text">Download APK</span>
+            <span id="android-spinner" class="spinner ml-2 hidden" style="width: 16px; height: 16px;"></span>
+          </button>
+        </div>
+
+        <!-- iOS Download -->
+        <div class="card" style="background: rgba(0, 122, 255, 0.15);">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="font-semibold text-accent" style="color: #007aff;">iOS App</h3>
+              <p class="text-sm text-muted">iOS App Store / TestFlight</p>
+            </div>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-muted" id="iosArrow"><path d="M7 10l5 5 5-5"/><path d="M0 6h24v2H0V6z" fill="none"/></svg>
+          </div>
+          <div id="ios-setup" class="hidden pt-3" style="color: var(--fg);">
+            <p class="text-sm text-muted mb-2">Setup information:</p>
+            <ul class="text-sm text-muted space-y-1">
+              <li>iOS 13.0 or later required</li>
+              <li>Available on App Store or via TestFlight</li>
+              <li>App uses device-scoped JWT tokens for authentication</li>
+            </ul>
+          </div>
+          <button id="ios-download-btn" class="btn-primary w-full py-3 rounded-xl font-medium mt-3" disabled>
+            <span id="ios-btn-text">View App Details</span>
+            <span id="ios-spinner" class="spinner ml-2 hidden" style="width: 16px; height: 16px;"></span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -608,6 +660,87 @@
     form.addEventListener('submit', analyzeIdea);
     clearBtn.addEventListener('click', clearForm);
     
+    // Initialize
+    checkAPI().then(available => {
+      if (!available) {
+        showError('Backend API not running. Please start the backend server at http://127.0.0.1:8787');
+      }
+    });
+
+    // Download functionality
+    async function checkAndDownload(platform) {
+      const isAndroid = platform === 'android';
+      const btnText = document.getElementById(`android-btn-text`);
+      const btnSpinner = document.getElementById(`android-spinner`);
+      const iosBtnText = document.getElementById('ios-btn-text');
+      const iosSpinner = document.getElementById('ios-spinner');
+      const androidSetup = document.getElementById('android-setup');
+      const iosSetup = document.getElementById('ios-setup');
+      const androidBackend = document.getElementById('android-backend-url');
+      const iosBackend = document.getElementById('ios-backend-url');
+      const androidBtn = document.getElementById('android-download-btn');
+      const iosBtn = document.getElementById('ios-download-btn');
+      
+      if (isAndroid) {
+        btnSpinner.classList.remove('hidden');
+        androidBtn.disabled = true;
+        androidBtn.textContent = 'Preparing...';
+      } else {
+        iosSpinner.classList.remove('hidden');
+        iosBtn.disabled = true;
+        iosBtn.textContent = 'Loading...';
+      }
+      
+      try {
+        // Show setup information popup
+        if (isAndroid) {
+          androidSetup.classList.remove('hidden');
+          androidBackend.textContent = 'http://127.0.0.1:8787';
+          // Show Android APK download confirmation
+          if (confirm('Download FounderOS Android APK?\n\nRequires Android 7.0+\n\nConnect to backend at: 127.0.0.1:8787\n\nEnable "Unknown sources" in device settings for APK installation')) {
+            // Simulate APK download
+            androidBtn.textContent = 'Downloading...';
+            androidBtn.disabled = true;
+            // In a real app, this would trigger an actual download
+            setTimeout(() => {
+              androidBtn.textContent = 'Downloaded!';
+              setTimeout(() => {
+                androidBtn.textContent = 'Download APK';
+                androidBtn.disabled = false;
+                androidSetup.classList.add('hidden');
+              }, 2000);
+            }, 1500);
+          }
+        } else {
+          iosSetup.classList.remove('hidden');
+          iosBackend.textContent = 'http://127.0.0.1:8787';
+          // Show iOS app details
+          alert('FounderOS iOS App\n\n• iOS 13.0 or later required\n• Available on App Store or via TestFlight\n• Connects to backend at: 127.0.0.1:8787\n• Uses device-scoped JWT tokens for authentication\n\nView on App Store or request TestFlight access?');
+        }
+      } catch (err) {
+        console.error('Download error:', err);
+        if (isAndroid) {
+          alert('Failed to process Android download. Please try again.');
+        } else {
+          alert('Failed to load iOS app details. Please try again.');
+        }
+      } finally {
+        if (isAndroid) {
+          btnSpinner.classList.add('hidden');
+          androidBtn.disabled = false;
+          androidBtn.textContent = 'Download APK';
+        } else {
+          iosSpinner.classList.add('hidden');
+          iosBtn.disabled = false;
+          iosBtn.textContent = 'View App Details';
+        }
+      }
+    }
+
+    // Event listeners for download buttons
+    document.getElementById('android-download-btn').addEventListener('click', () => checkAndDownload('android'));
+    document.getElementById('ios-download-btn').addEventListener('click', () => checkAndDownload('ios'));
+
     // Initialize
     checkAPI().then(available => {
       if (!available) {

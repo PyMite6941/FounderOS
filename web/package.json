@@ -1,0 +1,17 @@
+{
+  "name": "founderos-web",
+  "version": "1.0.0",
+  "description": "FounderOS \u2014 AI-powered startup idea analyzer web interface",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo 'No build step needed for static HTML'"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
