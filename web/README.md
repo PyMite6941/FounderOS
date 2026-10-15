@@ -52,8 +52,10 @@ fail instead of silently switching to temporary SQLite storage.
 ## Vercel deployment
 
 The Vercel project should use `web/` as its root directory, run `npm run build`, and publish `.`.
-Set `CLERK_PUBLISHABLE_KEY` and `API_BASE_URL` in Vercel. `API_BASE_URL` must be the HTTPS URL of
-the separately deployed FastAPI service. The backend must allow the Vercel origin in both
-`WEB_ORIGINS` and `CLERK_AUTHORIZED_PARTIES`.
+Set `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `API_BASE_URL` in Vercel.
+`API_BASE_URL` must be the HTTPS URL of the separately deployed FastAPI service. The website
+remains available if Clerk keys are missing, but the server logs a warning and Clerk middleware
+will be disabled. The backend must allow the Vercel origin in both `WEB_ORIGINS` and
+`CLERK_AUTHORIZED_PARTIES`.
 
 See [`vercel-hosting-info.md`](../vercel-hosting-info.md) for the full deployment checklist.

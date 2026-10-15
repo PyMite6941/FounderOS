@@ -6,12 +6,13 @@ from typing import Literal
 from urllib.parse import urlparse
 
 import httpx
-from app import storage
-from app.auth import get_current_user_id, get_optional_current_user_id
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+
+from app import storage
+from app.auth import get_current_user_id, get_optional_current_user_id
 
 repository_root = Path(__file__).resolve().parents[2]
 load_dotenv(repository_root / ".env", override=False)

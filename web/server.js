@@ -8,7 +8,11 @@ const port = Number(process.env.PORT || 3000);
 const webDirectory = path.dirname(fileURLToPath(import.meta.url));
 const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8000";
 
-app.use(clerkMiddleware());
+if (process.env.CLERK_PUBLISHABLE_KEY?.trim() && process.env.CLERK_SECRET_KEY?.trim()) {
+  app.use(clerkMiddleware());
+} else {
+  console.warn("Clerk middleware is disabled until both Clerk keys are configured.");
+}
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/config.js", (_request, response) => {
