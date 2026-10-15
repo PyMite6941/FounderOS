@@ -31,18 +31,46 @@ class PersistenceService {
         self.modelContainer = container
     }
     
-    /// Save a startup idea
+    /// Save a startup idea. If an idea with the same `rawIdea` text already
+    /// exists, it is updated in place rather than inserted as a duplicate.
     /// - Parameters:
-    ///   - idea: The startup idea to save
+    ///   - analysis: The startup analysis to save
+    ///   - rawIdea: The original idea text entered by the user
     ///   - context: The SwiftData model context
     func saveStartup(_ analysis: StartupAnalysis, rawIdea: String, context: ModelContext) {
+        let trimmedRaw = rawIdea.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // De-dupe: if an idea with the same raw text already exists, update it.
+        if !trimmedRaw.isEmpty,
+           let existing = fetchStartup(byRawIdea: trimmedRaw, context: context) {
+            existing.title = analysis.startupName
+            existing.problem = analysis.problem
+            existing.targetUsers = analysis.targetUsers.joined(separator: ", ")
+            existing.solution = analysis.solution
+            existing.mvpFeatures = analysis.mvpFeatures
+            existing.businessModel = analysis.businessModel
+            existing.validationQuestions = analysis.validationQuestions
+            existing.nextStep = analysis.nextStep
+            existing.tagline = analysis.tagline
+            existing.laterFeatures = analysis.laterFeatures
+            existing.updatedAt = Date()
+
+            do {
+                try context.save()
+                print("✅ Startup updated (deduped): \(existing.title)")
+            } catch {
+                print("❌ Failed to update startup: \(error.localizedDescription)")
+            }
+            return
+        }
+
         var startupIdea = analysis.toStartupIdea()
         startupIdea.rawIdea = rawIdea
         startupIdea.createdAt = Date()
         startupIdea.updatedAt = Date()
-        
+
         context.insert(startupIdea)
-        
+
         do {
             try context.save()
             print("✅ Startup saved successfully: \(startupIdea.title)")
@@ -108,15 +136,37 @@ class PersistenceService {
         let predicate = #Predicate<StartupIdea> { idea in
             idea.id == id
         }
-        
+
         var descriptor = FetchDescriptor<StartupIdea>(predicate: predicate)
         descriptor.fetchLimit = 1
-        
+
         do {
             let ideas = try context.fetch(descriptor)
             return ideas.first
         } catch {
             print("❌ Failed to fetch startup: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// Fetch a startup by its raw idea text (used to dedupe saves).
+    /// - Parameters:
+    ///   - rawIdea: The original idea text entered by the user
+    ///   - context: The SwiftData model context
+    /// - Returns: The existing startup idea if one matches
+    func fetchStartup(byRawIdea rawIdea: String, context: ModelContext) -> StartupIdea? {
+        let predicate = #Predicate<StartupIdea> { idea in
+            idea.rawIdea == rawIdea
+        }
+
+        var descriptor = FetchDescriptor<StartupIdea>(predicate: predicate)
+        descriptor.fetchLimit = 1
+
+        do {
+            let ideas = try context.fetch(descriptor)
+            return ideas.first
+        } catch {
+            print("❌ Failed to fetch startup by raw idea: \(error.localizedDescription)")
             return nil
         }
     }
