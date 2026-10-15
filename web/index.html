@@ -19,37 +19,85 @@
       --card: #161620;
       --border: #2a2a3a;
       --error: #ff4757;
-      --code-bg: #1e1e27;
+      
+      /* Light mode variables */
+      --light-bg: #f5f5f7;
+      --light-bg-secondary: #ffffff;
+      --light-fg: #1d1d1f;
+      --light-muted: #6e6e73;
+      --light-card: #ffffff;
+      --light-border: #e5e5ea;
+      --light-accent: #007aff;
+      
+      /* Animation */
+      --transition-fast: 0.2s ease;
+      --transition-normal: 0.3s ease;
+      --transition-slow: 0.5s ease;
     }
-    
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0a0f;
+        --bg-secondary: #12121a;
+        --fg: #e8e8f0;
+        --muted: #6b6b80;
+        --accent: #00d4aa;
+        --card: #161620;
+        --border: #2a2a3a;
+      }
+    }
+
     * {
       box-sizing: border-box;
     }
-    
+
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--fg);
       min-height: 100vh;
       margin: 0;
+      transition: background var(--transition-normal), color var(--transition-normal);
     }
-    
+
     .bg-pattern {
       background-image: 
         radial-gradient(circle at 20% 20%, rgba(0, 212, 170, 0.03) 0%, transparent 50%),
         radial-gradient(circle at 80% 80%, rgba(0, 212, 170, 0.02) 0%, transparent 50%);
     }
-    
+
     .gradient-bg {
       background: linear-gradient(180deg, var(--bg) 0%, var(--bg-secondary) 100%);
     }
-    
-    .glass-card {
-      background: rgba(18, 18, 26, 0.7);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border);
+
+    /* Light mode support */
+    @media (prefers-color-scheme: light) {
+      .light-mode {
+        --bg: #f5f5f7;
+        --bg-secondary: #ffffff;
+        --fg: #1d1d1f;
+        --muted: #6e6e73;
+        --card: #ffffff;
+        --border: #e5e5ea;
+        --accent: #007aff;
+      }
     }
-    
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--light-border);
+      transition: all var(--transition-normal);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .glass-card {
+        background: rgba(22, 22, 32, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+      }
+    }
+
     .btn-primary {
       background: var(--accent);
       color: var(--bg);
@@ -60,19 +108,19 @@
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    
+
     .btn-primary:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 20px rgba(0, 212, 170, 0.3);
     }
-    
+
     .btn-primary:disabled {
       opacity: 0.5;
       cursor: not-allowed;
       transform: none;
       box-shadow: none;
     }
-    
+
     .btn-secondary {
       background: transparent;
       color: var(--fg);
@@ -83,12 +131,12 @@
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    
+
     .btn-secondary:hover {
       border-color: var(--accent);
       color: var(--accent);
     }
-    
+
     .input-field {
       background: var(--card);
       border: 1px solid var(--border);
@@ -100,27 +148,32 @@
       font-family: 'JetBrains Mono', monospace;
       transition: all 0.2s ease;
     }
-    
+
     .input-field:focus {
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-dim);
     }
-    
+
     .card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 24px;
+      transition: transform var(--transition-normal);
     }
-    
+
+    .card:hover {
+      transform: translateY(-2px);
+    }
+
     .section-title {
       font-size: 1.25rem;
       font-weight: 600;
       margin-bottom: 20px;
       color: var(--fg);
     }
-    
+
     .loading-overlay {
       position: fixed;
       inset: 0;
@@ -129,8 +182,14 @@
       align-items: center;
       justify-content: center;
       z-index: 100;
+      transition: opacity var(--transition-fast);
     }
-    
+
+    .loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
     .spinner {
       width: 40px;
       height: 40px;
@@ -138,16 +197,17 @@
       border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
+      transition: transform var(--transition-fast);
     }
-    
+
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    
+
     .result-card {
       animation: fadeInUp 0.3s ease;
     }
-    
+
     @keyframes fadeInUp {
       from {
         opacity: 0;
@@ -158,7 +218,7 @@
         transform: translateY(0);
       }
     }
-    
+
     .tag {
       display: inline-block;
       background: var(--accent-dim);
@@ -169,22 +229,33 @@
       font-weight: 500;
       margin: 2px;
       font-family: 'JetBrains Mono', monospace;
+      transition: background var(--transition-fast);
     }
-    
+
+    .tag:hover {
+      background: rgba(0, 212, 170, 0.25);
+    }
+
     .code-block {
-      background: var(--code-bg);
+      background: #1e1e27;
       border-radius: 8px;
       padding: 16px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.875rem;
       overflow-x: auto;
       border: 1px solid var(--border);
+      transition: background var(--transition-fast);
     }
-    
+
     .mono {
       font-family: 'JetBrains Mono', monospace;
     }
-    
+
+    .light-mode-indicator {
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
     @media (max-width: 640px) {
       .mobile-full-width {
         width: 100%;
@@ -192,22 +263,32 @@
     }
   </style>
 </head>
+
 <body class="bg-pattern min-h-screen p-4 md:p-8">
-  
+
   <div class="max-w-2xl mx-auto w-full">
-    
-    <!-- Header -->
-    <header class="mb-8 glass-card rounded-xl p-6 border-y border-border mb-8">
-      <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-2">
-        FounderOS
-      </h1>
-      <p class="text-sm md:text-base text-muted">
-        AI-powered startup idea analyzer
-      </p>
+
+    <!-- Header with light/dark mode toggle -->
+    <header class="mb-8 rounded-xl p-6 border-b border-border mb-8 transition-all Duration=300ms" id="header">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-2" id="headerTitle">
+            FounderOS
+          </h1>
+          <p class="text-sm md:text-base text-muted">
+            AI-powered startup idea analyzer
+          </p>
+        </div>
+        <button id="themeToggle" class="btn-secondary py-2 px-4 rounded-lg text-sm" aria-label="Toggle light/dark mode">
+          <svg id="themeIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l5 5-1.41 1.41L12 7.83l-4.58 2.83L4.95 13.03l1.41 1.41L12 16.17l7.58-4.72L19.07 10l-4.93 3.2L23 14z"/>
+          </svg>
+        </button>
+      </div>
     </header>
-    
+
     <!-- Analysis Form -->
-    <div class="glass-card rounded-xl p-6 border-y border-border mb-8">
+    <div class="rounded-xl p-6 border-y border-border mb-8 mb-4 transition-all Duration=300ms" id="formCard">
       <h2 class="section-title mb-4">Analyze Your Startup Idea</h2>
       
       <form id="idea-form" novalidate>
@@ -242,7 +323,7 @@
     </div>
     
     <!-- Results Section -->
-    <div id="results" class="glass-card rounded-xl p-6 border-y border-border hidden">
+    <div id="results" class="rounded-xl p-6 border-y border-border hidden mb-4 transition-all Duration=300ms">
       <h2 class="section-title mb-4">Analysis Results</h2>
       
       <div id="result-content">
@@ -251,7 +332,7 @@
     </div>
     
     <!-- Error State -->
-    <div id="error" class="glass-card rounded-xl p-6 border-y border-border hidden" style="border-color: var(--error);">
+    <div id="error" class="rounded-xl p-6 border-y border-border hidden" style="border-color: var(--error);">
       <p class="text-error text-sm md:text-base" id="error-msg">Something went wrong. Please try again.</p>
     </div>
     
@@ -262,7 +343,7 @@
         <span class="ml-4 text-muted">Analyzing...</span>
       </div>
     </div>
-    
+
   </div>
 
   <script>
@@ -271,28 +352,41 @@
       ? 'http://127.0.0.1:8787'  // Local backend
       : '';  // Production - relative path
 
-    const form = document.getElementById('idea-form');
-    const ideaInput = document.getElementById('idea-input');
-    const analyzeBtn = document.getElementById('analyze-btn');
-    const clearBtn = document.getElementById('clear-btn');
-    const resultsDiv = document.getElementById('results');
-    const resultContent = document.getElementById('result-content');
-    const errorDiv = document.getElementById('error');
-    const errorMsg = document.getElementById('error-msg');
-    const loadingDiv = document.getElementById('loading');
+    // Theme management
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const htmlEl = document.documentElement;
+    
+    // Set initial theme
+    if (prefersDark || !localStorage.getItem('theme') || localStorage.getItem('theme') === 'dark') {
+      htmlEl.classList.add('dark-mode');
+      localStorage.setItem('theme', 'dark');
+      updateThemeIcon('dark');
+    } else {
+      htmlEl.classList.remove('dark-mode');
+      localStorage.setItem('theme', 'light');
+      updateThemeIcon('light');
+    }
 
-    // Check API availability
-    async function checkAPI() {
-      try {
-        const res = await fetch(`${API_BASE}/health`);
-        if (res.ok) {
-          console.log('Backend API is available');
-          return true;
-        }
-      } catch (e) {
-        console.warn('Backend API not available at', API_BASE);
+    // Theme toggle functionality
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    
+    themeToggle.addEventListener('click', () => {
+      if (htmlEl.classList.contains('dark-mode')) {
+        htmlEl.classList.remove('dark-mode');
+        localStorage.setItem('theme', 'light');
+        updateThemeIcon('light');
+      } else {
+        htmlEl.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark');
+        updateThemeIcon('dark');
       }
-      return false;
+    });
+
+    function updateThemeIcon(mode) {
+      const moonIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l-1.45 1.3L16.4 16.4-1.6 1.6L12 21l7.95-7.83L21.45 9.5l-1.6-1.6L12 2z"/></svg>`;
+      const sunIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l-5 5 1.41 1.41L12 7.83l-4.58 2.83L4.95 13.03l1.41 1.41L12 16.17l7.58-4.72L19.07 10l-4.93 3.2L23 14z"/></svg>`;
+      themeIcon.innerHTML = mode === 'dark' ? sunIcon : moonIcon;
     }
 
     // Show loading state
@@ -320,7 +414,7 @@
       errorDiv.classList.add('hidden');
     }
 
-    // Render results with programming-focused display
+    // Render results with animations
     function renderResults(analysis) {
       const startupName = analysis.startupName || 'Unnamed Startup';
       const tagline = analysis.tagline || '';
@@ -339,7 +433,7 @@
       const featuresHtml = mvpFeatures.map(f => `<li>${f}</li>`).join('') || '<li class="text-muted">No MVP features specified</li>';
       
       resultContent.innerHTML = `
-        <div class="grid lg:grid-cols-2 gap-8">
+        <div class="grid lg:grid-cols-2 gap-8 animate-in">
           <!-- Left column - Core details -->
           <div>
             <h3 class="font-semibold mb-3 text-accent">Startup Name</h3>
@@ -398,6 +492,17 @@
         </div>
       `;
       
+      // Add entrance animations
+      requestAnimationFrame(() => {
+        resultsDiv.classList.remove('hidden');
+        resultsDiv.classList.add('result-card');
+        // Add staggered animation to children
+        const children = resultsDiv.querySelectorAll('div > div');
+        children.forEach((child, index) => {
+          child.style.transitionDelay = `${index * 0.1}s`;
+        });
+      });
+      
       resultsDiv.classList.remove('hidden');
       resultsDiv.classList.add('result-card');
     }
@@ -449,14 +554,13 @@
         stack.push('MQTT');
       }
       
-      // Default stack if no matches
       if (stack.length === 0) {
         stack.push('Node.js');
         stack.push('React');
         stack.push('PostgreSQL');
       }
       
-      return stack.slice(0, 6); // Limit to 6 items
+      return stack.slice(0, 6);
     }
 
     // Analyze idea
