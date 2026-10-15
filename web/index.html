@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #0a0a0f;
@@ -19,6 +19,7 @@
       --card: #161620;
       --border: #2a2a3a;
       --error: #ff4757;
+      --code-bg: #1e1e27;
     }
     
     * {
@@ -96,6 +97,7 @@
       color: var(--fg);
       font-size: 1rem;
       width: 100%;
+      font-family: 'JetBrains Mono', monospace;
       transition: all 0.2s ease;
     }
     
@@ -166,6 +168,21 @@
       font-size: 0.75rem;
       font-weight: 500;
       margin: 2px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .code-block {
+      background: var(--code-bg);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+    }
+    
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
     }
     
     @media (max-width: 640px) {
@@ -303,8 +320,9 @@
       errorDiv.classList.add('hidden');
     }
 
-    // Render results
+    // Render results with programming-focused display
     function renderResults(analysis) {
+      const startupName = analysis.startupName || 'Unnamed Startup';
       const tagline = analysis.tagline || '';
       const problem = analysis.problem || '';
       const solution = analysis.solution || '';
@@ -313,22 +331,25 @@
       const nextStep = analysis.nextStep || '';
       const targetUsers = analysis.targetUsers || [];
       
+      // Generate tech stack based on the analysis
+      const techStack = generateTechStack(analysis);
+      
       const tagsHtml = targetUsers.map(u => `<span class="tag">${u}</span>`).join('');
       
       const featuresHtml = mvpFeatures.map(f => `<li>${f}</li>`).join('') || '<li class="text-muted">No MVP features specified</li>';
       
       resultContent.innerHTML = `
-        <div class="grid lg:grid-cols-2 gap-6">
-          <!-- Left column -->
+        <div class="grid lg:grid-cols-2 gap-8">
+          <!-- Left column - Core details -->
           <div>
-            <h3 class="font-semibold mb-3">Startup Name</h3>
-            <p class="font-medium" id="startup-name">${analysis.startupName || '—'}</p>
+            <h3 class="font-semibold mb-3 text-accent">Startup Name</h3>
+            <p class="font-medium" id="startup-name" class="mono">${startupName}</p>
             
-            <p class="mt-4 text-sm md:text-base text-muted leading-relaxed">
+            <p class="mt-4 text-sm md:text-base text-muted leading-relaxed mono">
               ${problem}
             </p>
             
-            <p class="mt-4 text-sm md:text-base text-muted">
+            <p class="mt-4 text-sm md:text-base text-muted mono">
               ${solution}
             </p>
             
@@ -338,15 +359,19 @@
             </details>
           </div>
           
-          <!-- Right column -->
+          <!-- Right column - Technical details -->
           <div>
-            <h3 class="font-semibold mb-3">Tagline</h3>
+            <h3 class="font-semibold mb-3 text-accent">Tagline</h3>
             <p class="font-medium" id="tagline">${tagline}</p>
             
-            <h3 class="font-semibold mt-6 mb-3">Solution</h3>
-            <p class="font-medium">${solution}</p>
+            <div class="mt-6">
+              <h3 class="font-semibold mb-3 text-accent">Suggested Tech Stack</h3>
+              <div class="grid grid-cols-2 gap-2">
+                ${techStack.map(tech => `<span class="tag">${tech}</span>`).join('')}
+              </div>
+            </div>
             
-            <h3 class="font-semibold mt-6 mb-3">MVP Features</h3>
+            <h3 class="font-semibold mt-6 mb-3 text-accent">MVP Features</h3>
             <ol class="space-y-2">${featuresHtml}</ol>
             
             <div class="mt-4 p-3 rounded-xl bg-accent-dim">
@@ -358,12 +383,80 @@
               <p class="font-medium mb-2">Next Step</p>
               <p>${nextStep}</p>
             </div>
+            
+            <div class="mt-8 p-4 rounded-xl bg-secondary">
+              <p class="font-medium mb-2">Recommended Architecture</p>
+              <p class="text-sm mono line-height-relaxed">
+                • Frontend: React + TypeScript + Vite<br>
+                • Backend: Node.js + FastAPI or Go<br>
+                • Database: PostgreSQL or MongoDB<br>
+                • API: RESTful + JSON Web Tokens<br>
+                • Deployment: Docker + Vercel/Render
+              </p>
+            </div>
           </div>
         </div>
       `;
       
       resultsDiv.classList.remove('hidden');
       resultsDiv.classList.add('result-card');
+    }
+
+    // Generate tech stack based on idea content
+    function generateTechStack(analysis) {
+      const idea = (analysis.problem || '').toLowerCase() + ' ' + (analysis.solution || '').toLowerCase();
+      const stack = [];
+      
+      if (idea.includes('ai') || idea.includes('artificial intelligence') || idea.includes('machine learning')) {
+        stack.push('Python + FastAPI');
+        stack.push('TensorFlow/PyTorch');
+        stack.push('Redis');
+      }
+      
+      if (idea.includes('app') || idea.includes('mobile') || idea.includes('android') || idea.includes('ios')) {
+        stack.push('React Native');
+        stack.push('Node.js');
+        stack.push('Firebase');
+      }
+      
+      if (idea.includes('web') || idea.includes('website') || idea.includes('platform')) {
+        stack.push('Next.js');
+        stack.push('Tailwind CSS');
+        stack.push('Prisma');
+      }
+      
+      if (idea.includes('finance') || idea.includes('budget') || idea.includes('money') || idea.includes('payment')) {
+        stack.push('Stripe API');
+        stack.push('Node.js');
+        stack.push('Python');
+      }
+      
+      if (idea.includes('health') || idea.includes('medical') || idea.includes('doctor') || idea.includes('patient')) {
+        stack.push('HIPAA-compliant');
+        stack.push('Node.js');
+        stack.push('PostgreSQL');
+      }
+      
+      if (idea.includes('education') || idea.includes('learn') || idea.includes('study') || idea.includes('student')) {
+        stack.push('React');
+        stack.push('Node.js');
+        stack.push('Supabase');
+      }
+      
+      if (idea.includes('iot') || idea.includes('device') || idea.includes('hardware') || idea.includes('sensor')) {
+        stack.push('Embedded C++');
+        stack.push('Python');
+        stack.push('MQTT');
+      }
+      
+      // Default stack if no matches
+      if (stack.length === 0) {
+        stack.push('Node.js');
+        stack.push('React');
+        stack.push('PostgreSQL');
+      }
+      
+      return stack.slice(0, 6); // Limit to 6 items
     }
 
     // Analyze idea
