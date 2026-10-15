@@ -3,7 +3,6 @@
 Thank you for considering contributing! Please read the following guidelines to help make the process smooth and enjoyable.
 
 ## Development Setup
-
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally: `git clone https://github.com/your-username/FounderOS.git`
 3. **Create a branch**: `git checkout -b feature/amazing-feature`
@@ -13,7 +12,7 @@ Thank you for considering contributing! Please read the following guidelines to 
    - Ensure all existing tests pass
 6. **Commit your changes**: `git commit -m 'feat: add some amazing feature'`
 7. **Push to your branch**: `git push origin feature/amazing-feature`
-8. **Open a Pull Request** against the main repository
+8. **Open a Pull PR** against the main repository
 
 ## Code Styles
 
@@ -30,6 +29,7 @@ Thank you for considering contributing! Please read the following guidelines to 
 
 ### Android (Jetpack Compose)
 - Follow [Android Kotlin coding conventions](https://developer.android.com/kotlin/style)
+- **Use lowercase `true`/`false`** — do not use `True`/`False` (capitalized), which are invalid Kotlin
 - Use the constants from `androidUI/app/src/main/java/com/founderos/androidui/constants/`
 - Keep API clients consistent with `POST /v1/analyze`
 
@@ -57,7 +57,8 @@ Thank you for considering contributing! Please read the following guidelines to 
 1. Add data model in `androidUI/app/src/main/java/com/founderos/androidui/data/`
 2. Add API service in `androidUI/app/src/main/java/com/founderos/androidui/network/`
 3. Add constants in `androidUI/app/src/main/java/com/founderos/androidui/constants/`
-4. Update `AppConstants` if needed
+4. **Use lowercase `true`/`false`** — avoid `True`/`False` which cause compilation errors
+5. Update `AppConstants` if needed
 
 ### Web
 1. Update `web/index.html` with new UI elements

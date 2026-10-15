@@ -33,8 +33,8 @@ fun FounderButton(
     onClick: () -> Unit,
     text: String,
     variant: FounderButton.Variant = FounderButton.Primary,
-    loading: Boolean = False,
-    enabled: Boolean = True,
+    loading: Boolean = false,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val (color, textColor, backgroundColor) when (variant) {
@@ -52,7 +52,7 @@ fun FounderButton(
         OutlinedButton(
             onClick = if (enabled) onClick else {},
             modifier = modifier.fillMaxWidth(),
-            loading = True,
+            loading = false,
             title = { Text(text, color = textColor) }
         )
     } elif (!enabled) {

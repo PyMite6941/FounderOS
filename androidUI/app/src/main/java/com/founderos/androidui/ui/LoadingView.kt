@@ -1,5 +1,5 @@
 @Composable
-fun LoadingView(show: Boolean = True, text: String = "Analyzing...") {
+fun LoadingView(show: Boolean = true, text: String = "Analyzing...") {
     if (show) {
         Box(
             modifier = Modifier.fillMaxSize(),
