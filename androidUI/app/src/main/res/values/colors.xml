@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="lightBackground">#FFFFFF</color>
+    <color name="lightPrimaryText">#000000</color>
+    <color name="lightAccent">#6750A4</color>
+    <color name="lightCard">#F5F5F5</color>
+    <color name="lightBorder">#E0E0E0</color>
+    <color name="darkBackground">#000000</color>
+    <color name="darkPrimaryText">#FFFFFF</color>
+    <color name="darkAccent">#6750A4</color>
+    <color name="darkCard">#121212</color>
+    <color name="darkBorder">#303030</color>
+</resources>

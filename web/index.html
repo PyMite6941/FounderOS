@@ -896,12 +896,24 @@
         }
       }
 
-      button.disabled = !release?.available || !secureUrl;
+      // Install script paths
+      const androidScript = 'emulators/android-ui/start-emulator.ps1';
+      const iosScript = 'emulators/ios-ui/install-on-ios.sh';
+
+      button.disabled = !release?.available;
       if (button.disabled) {
+        // Show install script fallback when no official release
         status.textContent = isAndroid
-          ? 'Android source is available below; no installable APK release is published yet.'
-          : 'iOS source is available below; no signed App Store or TestFlight build is linked yet.';
-        buttonText.textContent = isAndroid ? 'APK release not published' : 'TestFlight link not set';
+          ? 'Android source available. Use the install script to run the emulator and sideload.'
+          : 'iOS source available. Use the install script to boot the simulator.';
+        buttonText.textContent = isAndroid ? 'Run Android Emulator' : 'Run iOS Install Script';
+        button.onclick = () => {
+          if (isAndroid) {
+            window.open(androidScript, '_blank', 'noopener,noreferrer');
+          } else {
+            window.open(iosScript, '_blank', 'noopener,noreferrer');
+          }
+        };
         return;
       }
 
@@ -917,8 +929,21 @@
         updateReleaseCard('ios', releases.ios);
       } catch (error) {
         for (const platform of ['android', 'ios']) {
-          document.getElementById(`${platform}-release-status`).textContent = 'Release information could not be loaded.';
-          document.getElementById(`${platform}-download-btn`).disabled = true;
+          const status = document.getElementById(`${platform}-release-status`);
+          const button = document.getElementById(`${platform}-download-btn`);
+          const buttonText = document.getElementById(`${platform}-btn-text`);
+          // Show install script fallback when releases can't be loaded
+          status.textContent = platform === 'android'
+            ? 'Android source available. Use the install script to run the emulator.'
+            : 'iOS source available. Use the install script to boot the simulator.';
+          button.disabled = false;
+          buttonText.textContent = platform === 'android' ? 'Run Android Emulator' : 'Run iOS Install Script';
+          button.onclick = () => {
+            const script = platform === 'android'
+              ? 'emulators/android-ui/start-emulator.ps1'
+              : 'emulators/ios-ui/install-on-ios.sh';
+            window.open(script, '_blank', 'noopener,noreferrer');
+          };
         }
         console.error('Could not load app releases:', error);
       }
