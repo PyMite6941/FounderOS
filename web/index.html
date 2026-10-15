@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FounderOS — Startup Idea Analyzer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-secondary: #12121a;
+      --fg: #e8e8f0;
+      --muted: #6b6b80;
+      --accent: #00d4aa;
+      --accent-dim: rgba(0, 212, 170, 0.15);
+      --card: #161620;
+      --border: #2a2a3a;
+      --error: #ff4757;
+      
+      /* Light mode variables */
+      --light-bg: #f5f5f7;
+      --light-bg-secondary: #ffffff;
+      --light-fg: #1d1d1f;
+      --light-muted: #6e6e73;
+      --light-card: #ffffff;
+      --light-border: #e5e5ea;
+      --light-accent: #007aff;
+      
+      /* Animation */
+      --transition-fast: 0.2s ease;
+      --transition-normal: 0.3s ease;
+      --transition-slow: 0.5s ease;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0a0f;
+        --bg-secondary: #12121a;
+        --fg: #e8e8f0;
+        --muted: #6b6b80;
+        --accent: #00d4aa;
+        --card: #161620;
+        --border: #2a2a3a;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      margin: 0;
+      transition: background var(--transition-normal), color var(--transition-normal);
+    }
+
+    .bg-pattern {
+      background-image: 
+        radial-gradient(circle at 20% 20%, rgba(0, 212, 170, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 212, 170, 0.02) 0%, transparent 50%);
+    }
+
+    .gradient-bg {
+      background: linear-gradient(180deg, var(--bg) 0%, var(--bg-secondary) 100%);
+    }
+
+    /* Light mode support */
+    @media (prefers-color-scheme: light) {
+      .light-mode {
+        --bg: #f5f5f7;
+        --bg-secondary: #ffffff;
+        --fg: #1d1d1f;
+        --muted: #6e6e73;
+        --card: #ffffff;
+        --border: #e5e5ea;
+        --accent: #007aff;
+      }
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--light-border);
+      transition: all var(--transition-normal);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .glass-card {
+        background: rgba(22, 22, 32, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+      }
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0, 212, 170, 0.3);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--fg);
+      font-weight: 500;
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .input-field {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--fg);
+      font-size: 1rem;
+      width: 100%;
+      font-family: 'JetBrains Mono', monospace;
+      transition: all 0.2s ease;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      transition: transform var(--transition-normal);
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--fg);
+    }
+
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity var(--transition-fast);
+    }
+
+    .loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--bg-secondary);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      transition: transform var(--transition-fast);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .result-card {
+      animation: fadeInUp 0.3s ease;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .tag {
+      display: inline-block;
+      background: var(--accent-dim);
+      color: var(--accent);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin: 2px;
+      font-family: 'JetBrains Mono', monospace;
+      transition: background var(--transition-fast);
+    }
+
+    .tag:hover {
+      background: rgba(0, 212, 170, 0.25);
+    }
+
+    .code-block {
+      background: #1e1e27;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      transition: background var(--transition-fast);
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .light-mode-indicator {
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    @media (max-width: 640px) {
+      .mobile-full-width {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-pattern min-h-screen p-4 md:p-8">
+
+  <div class="max-w-2xl mx-auto w-full">
+
+    <!-- Header with light/dark mode toggle -->
+    <header class="mb-8 rounded-xl p-6 border-b border-border mb-8 transition-all Duration=300ms" id="header">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-2" id="headerTitle">
+            FounderOS
+          </h1>
+          <p class="text-sm md:text-base text-muted">
+            AI-powered startup idea analyzer
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="auth-status" class="text-sm text-muted" aria-live="polite">Checking account setup…</span>
+          <button id="sign-in-btn" class="btn-secondary py-2 px-4 rounded-lg text-sm hidden" type="button">Sign in</button>
+          <div id="clerk-user-button" class="hidden"></div>
+          <button id="themeToggle" class="btn-secondary py-2 px-4 rounded-lg text-sm" aria-label="Toggle light/dark mode">
+            <svg id="themeIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l5 5-1.41 1.41L12 7.83l-4.58 2.83L4.95 13.03l1.41 1.41L12 16.17l7.58-4.72L19.07 10l-4.93 3.2L23 14z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Analysis Form -->
+    <div class="rounded-xl p-6 border-y border-border mb-8 mb-4 transition-all Duration=300ms" id="formCard">
+      <h2 class="section-title mb-4">Analyze Your Startup Idea</h2>
+      
+      <form id="idea-form" novalidate>
+        <div>
+          <textarea 
+            id="idea-input"
+            class="input-field w-full h-24 md:h-32 rounded-xl px-4 py-3 resize-none focus-state mb-4"
+            placeholder="Enter your startup idea..."
+            rows="2"
+            required
+          ></textarea>
+          <label for="idea-input" class="text-sm md:text-base text-muted mb-2 block">What are you thinking about?</label>
+        </div>
+        
+        <div class="flex gap-3">
+          <button 
+            type="submit"
+            id="analyze-btn"
+            class="btn-primary flex-1 py-3 rounded-xl font-medium"
+          >
+            Analyze Idea
+          </button>
+          <button 
+            type="button"
+            id="clear-btn"
+            class="btn-secondary py-3 rounded-xl font-medium"
+          >
+            Clear
+          </button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Results Section -->
+    <div id="results" class="rounded-xl p-6 border-y border-border hidden mb-4 transition-all Duration=300ms">
+      <h2 class="section-title mb-4">Analysis Results</h2>
+      
+      <div id="result-content">
+        <!-- Filled in by JS -->
+      </div>
+      <button id="save-idea-btn" class="btn-secondary mt-6 hidden" type="button">Save this idea</button>
+      <p id="save-idea-status" class="text-sm text-muted mt-2" aria-live="polite"></p>
+    </div>
+
+    <section id="saved-ideas" class="rounded-xl p-6 border-y border-border hidden mb-4">
+      <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 class="section-title mb-1">Your saved ideas</h2>
+          <p class="text-sm text-muted">Your ideas stay synced to your account.</p>
+        </div>
+        <button id="refresh-ideas-btn" class="btn-secondary py-2 px-4 rounded-lg text-sm" type="button">Refresh</button>
+      </div>
+      <div id="saved-ideas-list" class="space-y-3" aria-live="polite"></div>
+    </section>
+    
+    <!-- Error State -->
+    <div id="error" class="rounded-xl p-6 border-y border-border hidden" style="border-color: var(--error);">
+      <p class="text-error text-sm md:text-base" id="error-msg">Something went wrong. Please try again.</p>
+    </div>
+    
+    <!-- Loading State -->
+    <div id="loading" class="loading-overlay hidden" role="alert" aria-live="polite">
+      <div>
+        <div class="spinner"></div>
+        <span class="ml-4 text-muted">Analyzing...</span>
+      </div>
+    </div>
+
+    <!-- Download Section -->
+    <div id="downloads" class="mt-8 rounded-xl p-6 border-y border-border transition-all Duration=300ms" style="background: var(--card); border-color: var(--border);">
+      <h2 class="section-title mb-4">Mobile Apps</h2>
+      <p class="text-muted mb-4">Browse the Android and iOS source projects. Phone installers will appear when distributable builds are published.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Android Download -->
+        <div class="card" style="background: var(--accent-dim);">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="font-semibold text-accent">Android App</h3>
+              <p id="android-release-status" class="text-sm text-muted">Checking for a published APK…</p>
+            </div>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-muted" id="androidArrow"><path d="M7 10l5 5 5-5"/><path d="M0 6h24v2H0V6z" fill="none"/></svg>
+          </div>
+          <button id="android-download-btn" class="btn-primary w-full py-3 rounded-xl font-medium mt-3" disabled>
+            <span id="android-btn-text">APK release not published</span>
+            <span id="android-spinner" class="spinner ml-2 hidden" style="width: 16px; height: 16px;"></span>
+          </button>
+          <a class="mt-3 block text-center text-sm text-accent underline-offset-4 hover:underline" href="https://github.com/PyMite6941/FounderOS/tree/main/androidUI" target="_blank" rel="noopener noreferrer">View Android source project</a>
+        </div>
+
+        <!-- iOS Download -->
+        <div class="card" style="background: rgba(0, 122, 255, 0.15);">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="font-semibold text-accent" style="color: #007aff;">iOS App</h3>
+              <p id="ios-release-status" class="text-sm text-muted">Checking for an App Store or TestFlight link…</p>
+            </div>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-muted" id="iosArrow"><path d="M7 10l5 5 5-5"/><path d="M0 6h24v2H0V6z" fill="none"/></svg>
+          </div>
+          <button id="ios-download-btn" class="btn-primary w-full py-3 rounded-xl font-medium mt-3" disabled>
+            <span id="ios-btn-text">TestFlight link not set</span>
+            <span id="ios-spinner" class="spinner ml-2 hidden" style="width: 16px; height: 16px;"></span>
+          </button>
+          <a class="mt-3 block text-center text-sm text-accent underline-offset-4 hover:underline" href="https://github.com/PyMite6941/FounderOS/tree/main/appleUI" target="_blank" rel="noopener noreferrer">View iOS source project</a>
+        </div>
+      </div>
+      <p class="mt-4 text-center text-sm text-muted">
+        Source code is not an installable phone app.
+        <a class="text-accent underline-offset-4 hover:underline" href="https://github.com/PyMite6941/FounderOS/archive/refs/heads/main.zip" target="_blank" rel="noopener noreferrer">Download the repository source ZIP</a>
+        (includes both projects).
+      </p>
+    </div>
+  </div>
+
+  <script src="/config.js"></script>
+  <script>
+    const API_BASE = (window.FOUNDEROS_CONFIG?.apiBase || '').replace(/\/$/, '');
+    const CLERK_PUBLISHABLE_KEY = window.FOUNDEROS_CONFIG?.clerkPublishableKey || '';
+    const form = document.getElementById('idea-form');
+    const ideaInput = document.getElementById('idea-input');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const loadingDiv = document.getElementById('loading');
+    const errorDiv = document.getElementById('error');
+    const errorMsg = document.getElementById('error-msg');
+    const resultsDiv = document.getElementById('results');
+    const resultContent = document.getElementById('result-content');
+    const authStatus = document.getElementById('auth-status');
+    const signInButton = document.getElementById('sign-in-btn');
+    const userButtonContainer = document.getElementById('clerk-user-button');
+    const savedIdeasSection = document.getElementById('saved-ideas');
+    const savedIdeasList = document.getElementById('saved-ideas-list');
+    let clerkInstance = null;
+    let currentIdea = '';
+    let currentAnalysis = null;
+    let previousSignedInState = null;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[character]);
+    }
+
+    async function apiRequest(path, options = {}) {
+      const { authenticated = false, ...requestOptions } = options;
+      const headers = new Headers(requestOptions.headers || {});
+      if (requestOptions.body && !headers.has('Content-Type')) {
+        headers.set('Content-Type', 'application/json');
+      }
+      if (authenticated) {
+        if (!clerkInstance?.isSignedIn || !clerkInstance.session) {
+          throw new Error('Sign in to continue.');
+        }
+        const token = await clerkInstance.session.getToken();
+        if (!token) throw new Error('Could not retrieve your Clerk session.');
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+
+      const response = await fetch(`${API_BASE}${path}`, {
+        ...requestOptions,
+        headers,
+      });
+      const responseText = await response.text();
+      let data = null;
+      if (responseText) {
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          data = { detail: responseText };
+        }
+      }
+      if (!response.ok) {
+        throw new Error(data?.detail || data?.error || `Request failed (${response.status}).`);
+      }
+      return data;
+    }
+
+    // Theme management
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const htmlEl = document.documentElement;
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    
+    // Set initial theme
+    if (prefersDark || !localStorage.getItem('theme') || localStorage.getItem('theme') === 'dark') {
+      htmlEl.classList.add('dark-mode');
+      localStorage.setItem('theme', 'dark');
+      updateThemeIcon('dark');
+    } else {
+      htmlEl.classList.remove('dark-mode');
+      localStorage.setItem('theme', 'light');
+      updateThemeIcon('light');
+    }
+
+    // Theme toggle functionality
+    themeToggle.addEventListener('click', () => {
+      if (htmlEl.classList.contains('dark-mode')) {
+        htmlEl.classList.remove('dark-mode');
+        localStorage.setItem('theme', 'light');
+        updateThemeIcon('light');
+      } else {
+        htmlEl.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark');
+        updateThemeIcon('dark');
+      }
+    });
+
+    function updateThemeIcon(mode) {
+      const moonIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l-1.45 1.3L16.4 16.4-1.6 1.6L12 21l7.95-7.83L21.45 9.5l-1.6-1.6L12 2z"/></svg>`;
+      const sunIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l-5 5 1.41 1.41L12 7.83l-4.58 2.83L4.95 13.03l1.41 1.41L12 16.17l7.58-4.72L19.07 10l-4.93 3.2L23 14z"/></svg>`;
+      themeIcon.innerHTML = mode === 'dark' ? sunIcon : moonIcon;
+    }
+
+    // Show loading state
+    function setLoading(loading) {
+      if (loading) {
+        loadingDiv.classList.remove('hidden');
+        analyzeBtn.disabled = true;
+        analyzeBtn.textContent = 'Analyzing...';
+      } else {
+        loadingDiv.classList.add('hidden');
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = 'Analyze Idea';
+      }
+    }
+
+    // Show error
+    function showError(message) {
+      errorDiv.classList.remove('hidden');
+      errorMsg.textContent = message || 'Something went wrong. Please try again.';
+      resultsDiv.classList.add('hidden');
+    }
+
+    // Hide error
+    function hideError() {
+      errorDiv.classList.add('hidden');
+    }
+
+    // Render results with animations
+    function renderResults(analysis) {
+      const startupName = escapeHtml(analysis.startupName || 'Unnamed Startup');
+      const tagline = escapeHtml(analysis.tagline || '');
+      const problem = escapeHtml(analysis.problem || '');
+      const solution = escapeHtml(analysis.solution || '');
+      const mvpFeatures = analysis.mvpFeatures || [];
+      const businessModel = escapeHtml(analysis.businessModel || '');
+      const nextStep = escapeHtml(analysis.nextStep || '');
+      const targetUsers = analysis.targetUsers || [];
+      
+      // Generate tech stack based on the analysis
+      const techStack = generateTechStack(analysis);
+      
+      const tagsHtml = targetUsers.map(u => `<span class="tag">${escapeHtml(u)}</span>`).join('');
+      
+      const featuresHtml = mvpFeatures.map(f => `<li>${escapeHtml(f)}</li>`).join('') || '<li class="text-muted">No MVP features specified</li>';
+      
+      resultContent.innerHTML = `
+        <div class="grid lg:grid-cols-2 gap-8 animate-in">
+          <!-- Left column - Core details -->
+          <div>
+            <h3 class="font-semibold mb-3 text-accent">Startup Name</h3>
+            <p class="font-medium" id="startup-name" class="mono">${startupName}</p>
+            
+            <p class="mt-4 text-sm md:text-base text-muted leading-relaxed mono">
+              ${problem}
+            </p>
+            
+            <p class="mt-4 text-sm md:text-base text-muted mono">
+              ${solution}
+            </p>
+            
+            <details class="mt-4">
+              <summary class="cursor-pointer text-sm md:text-base text-accent underline">Target Users</summary>
+              <div class="mt-2">${tagsHtml}</div>
+            </details>
+          </div>
+          
+          <!-- Right column - Technical details -->
+          <div>
+            <h3 class="font-semibold mb-3 text-accent">Tagline</h3>
+            <p class="font-medium" id="tagline">${tagline}</p>
+            
+            <div class="mt-6">
+              <h3 class="font-semibold mb-3 text-accent">Suggested Tech Stack</h3>
+              <div class="grid grid-cols-2 gap-2">
+                ${techStack.map(tech => `<span class="tag">${escapeHtml(tech)}</span>`).join('')}
+              </div>
+            </div>
+            
+            <h3 class="font-semibold mt-6 mb-3 text-accent">MVP Features</h3>
+            <ol class="space-y-2">${featuresHtml}</ol>
+            
+            <div class="mt-4 p-3 rounded-xl bg-accent-dim">
+              <p class="font-medium mb-2">Business Model</p>
+              <p class="text-sm">${businessModel}</p>
+            </div>
+            
+            <div class="mt-6 p-3 rounded-xl bg-card">
+              <p class="font-medium mb-2">Next Step</p>
+              <p>${nextStep}</p>
+            </div>
+            
+            <div class="mt-8 p-4 rounded-xl bg-secondary">
+              <p class="font-medium mb-2">Recommended Architecture</p>
+              <p class="text-sm mono line-height-relaxed">
+                • Web: HTML, JavaScript, and Tailwind CSS<br>
+                • Backend: FastAPI<br>
+                • Mobile: Native SwiftUI and Kotlin<br>
+                • Identity: Clerk<br>
+                • Saved ideas: persistent SQLite storage
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Add entrance animations
+      requestAnimationFrame(() => {
+        resultsDiv.classList.remove('hidden');
+        resultsDiv.classList.add('result-card');
+        // Add staggered animation to children
+        const children = resultsDiv.querySelectorAll('div > div');
+        children.forEach((child, index) => {
+          child.style.transitionDelay = `${index * 0.1}s`;
+        });
+      });
+      
+      resultsDiv.classList.remove('hidden');
+      resultsDiv.classList.add('result-card');
+      currentAnalysis = analysis;
+      const saveButton = document.getElementById('save-idea-btn');
+      saveButton.classList.toggle('hidden', !clerkInstance?.isSignedIn);
+      saveButton.disabled = false;
+      saveButton.textContent = 'Save this idea';
+      document.getElementById('save-idea-status').textContent = '';
+    }
+
+    // Generate tech stack based on idea content
+    function generateTechStack(analysis) {
+      const idea = (analysis.problem || '').toLowerCase() + ' ' + (analysis.solution || '').toLowerCase();
+      const stack = [];
+      
+      if (idea.includes('ai') || idea.includes('artificial intelligence') || idea.includes('machine learning')) {
+        stack.push('Python + FastAPI');
+        stack.push('TensorFlow/PyTorch');
+        stack.push('Redis');
+      }
+      
+      if (idea.includes('app') || idea.includes('mobile') || idea.includes('android') || idea.includes('ios')) {
+        stack.push('React Native');
+        stack.push('Node.js');
+        stack.push('Firebase');
+      }
+      
+      if (idea.includes('web') || idea.includes('website') || idea.includes('platform')) {
+        stack.push('Next.js');
+        stack.push('Tailwind CSS');
+        stack.push('Prisma');
+      }
+      
+      if (idea.includes('finance') || idea.includes('budget') || idea.includes('money') || idea.includes('payment')) {
+        stack.push('Stripe API');
+        stack.push('Node.js');
+        stack.push('Python');
+      }
+      
+      if (idea.includes('health') || idea.includes('medical') || idea.includes('doctor') || idea.includes('patient')) {
+        stack.push('HIPAA-compliant');
+        stack.push('Node.js');
+        stack.push('PostgreSQL');
+      }
+      
+      if (idea.includes('education') || idea.includes('learn') || idea.includes('study') || idea.includes('student')) {
+        stack.push('React');
+        stack.push('Node.js');
+        stack.push('Supabase');
+      }
+      
+      if (idea.includes('iot') || idea.includes('device') || idea.includes('hardware') || idea.includes('sensor')) {
+        stack.push('Embedded C++');
+        stack.push('Python');
+        stack.push('MQTT');
+      }
+      
+      if (stack.length === 0) {
+        stack.push('Node.js');
+        stack.push('React');
+        stack.push('PostgreSQL');
+      }
+      
+      return stack.slice(0, 6);
+    }
+
+    async function loadClerkScript(source, publishableKey) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = source;
+        script.async = true;
+        script.crossOrigin = 'anonymous';
+        if (publishableKey) script.dataset.clerkPublishableKey = publishableKey;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Could not load Clerk. Check the publishable key and network connection.'));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function initializeClerk() {
+      if (!CLERK_PUBLISHABLE_KEY) {
+        authStatus.textContent = 'Add a Clerk publishable key to enable accounts';
+        return;
+      }
+
+      try {
+        const encodedDomain = CLERK_PUBLISHABLE_KEY.split('_')[2];
+        if (!encodedDomain) throw new Error('The Clerk publishable key is invalid.');
+        const clerkDomain = atob(encodedDomain).slice(0, -1);
+        await loadClerkScript(`https://${clerkDomain}/npm/@clerk/ui@1/dist/ui.browser.js`);
+        await loadClerkScript(
+          `https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`,
+          CLERK_PUBLISHABLE_KEY,
+        );
+        await window.Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
+        clerkInstance = window.Clerk;
+        clerkInstance.addListener(() => { void updateAuthState(); });
+        await updateAuthState();
+      } catch (error) {
+        console.error('Clerk initialization error:', error);
+        authStatus.textContent = error.message;
+      }
+    }
+
+    async function updateAuthState() {
+      const signedIn = Boolean(clerkInstance?.isSignedIn);
+      signInButton.classList.toggle('hidden', signedIn);
+      userButtonContainer.classList.toggle('hidden', !signedIn);
+      savedIdeasSection.classList.toggle('hidden', !signedIn);
+      document.getElementById('save-idea-btn').classList.toggle('hidden', !signedIn || !currentAnalysis);
+
+      if (signedIn) {
+        authStatus.textContent = 'Signed in';
+        if (!userButtonContainer.hasChildNodes()) clerkInstance.mountUserButton(userButtonContainer);
+        if (previousSignedInState !== true) await loadSavedIdeas();
+      } else {
+        authStatus.textContent = 'Sign in to save ideas';
+      }
+      previousSignedInState = signedIn;
+    }
+
+    async function checkAPI() {
+      try {
+        await apiRequest('/health');
+        return true;
+      } catch (error) {
+        showError('Backend API is unavailable. Check the API_BASE_URL configuration and backend service.');
+        console.error('Backend health check failed:', error);
+        return false;
+      }
+    }
+
+    async function analyzeIdea(event) {
+      event.preventDefault();
+      const idea = ideaInput.value.trim();
+      if (!idea) return;
+
+      hideError();
+      setLoading(true);
+      try {
+        const data = await apiRequest('/v1/analyze', {
+          method: 'POST',
+          body: JSON.stringify({ idea }),
+        });
+        currentIdea = idea;
+        renderResults(data.analysis);
+      } catch (error) {
+        console.error('Analysis error:', error);
+        showError(error.message || 'Failed to analyze idea. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function clearForm() {
+      ideaInput.value = '';
+      currentIdea = '';
+      currentAnalysis = null;
+      resultsDiv.classList.add('hidden');
+      document.getElementById('save-idea-btn').classList.add('hidden');
+      document.getElementById('save-idea-status').textContent = '';
+      hideError();
+    }
+
+    async function saveCurrentIdea() {
+      const saveButton = document.getElementById('save-idea-btn');
+      const status = document.getElementById('save-idea-status');
+      if (!currentIdea || !currentAnalysis) return;
+      saveButton.disabled = true;
+      status.textContent = 'Saving…';
+      try {
+        const saved = await apiRequest('/v1/ideas', {
+          method: 'POST',
+          authenticated: true,
+          body: JSON.stringify({ idea: currentIdea }),
+        });
+        currentAnalysis = saved.analysis;
+        renderResults(saved.analysis);
+        status.textContent = 'Saved to your account.';
+        await loadSavedIdeas();
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        saveButton.disabled = false;
+      }
+    }
+
+    function renderSavedIdeas(ideas) {
+      savedIdeasList.replaceChildren();
+      if (ideas.length === 0) {
+        savedIdeasList.textContent = 'No saved ideas yet. Analyze an idea and save it here.';
+        return;
+      }
+
+      for (const item of ideas) {
+        const card = document.createElement('article');
+        card.className = 'card flex flex-wrap items-center justify-between gap-3';
+        const details = document.createElement('div');
+        const title = document.createElement('h3');
+        title.className = 'font-semibold';
+        title.textContent = item.analysis?.startupName || 'Saved startup idea';
+        const preview = document.createElement('p');
+        preview.className = 'text-sm text-muted mt-1';
+        preview.textContent = item.idea;
+        const date = document.createElement('p');
+        date.className = 'text-xs text-muted mt-2';
+        date.textContent = new Date(item.createdAt).toLocaleString();
+        details.append(title, preview, date);
+
+        const actions = document.createElement('div');
+        actions.className = 'flex gap-2';
+        const openButton = document.createElement('button');
+        openButton.className = 'btn-secondary py-2 px-3 rounded-lg text-sm';
+        openButton.type = 'button';
+        openButton.textContent = 'Open';
+        openButton.addEventListener('click', () => {
+          currentIdea = item.idea;
+          currentAnalysis = item.analysis;
+          ideaInput.value = item.idea;
+          renderResults(item.analysis);
+          resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'btn-secondary py-2 px-3 rounded-lg text-sm';
+        deleteButton.type = 'button';
+        deleteButton.textContent = 'Delete';
+        deleteButton.addEventListener('click', async () => {
+          deleteButton.disabled = true;
+          try {
+            await apiRequest(`/v1/ideas/${encodeURIComponent(item.id)}`, {
+              method: 'DELETE',
+              authenticated: true,
+            });
+            await loadSavedIdeas();
+          } catch (error) {
+            deleteButton.disabled = false;
+            savedIdeasList.textContent = error.message;
+          }
+        });
+        actions.append(openButton, deleteButton);
+        card.append(details, actions);
+        savedIdeasList.append(card);
+      }
+    }
+
+    async function loadSavedIdeas() {
+      savedIdeasList.textContent = 'Loading saved ideas…';
+      try {
+        const data = await apiRequest('/v1/ideas', { authenticated: true });
+        renderSavedIdeas(data.ideas);
+      } catch (error) {
+        savedIdeasList.textContent = error.message;
+      }
+    }
+
+    function updateReleaseCard(platform, release) {
+      const isAndroid = platform === 'android';
+      const status = document.getElementById(`${platform}-release-status`);
+      const button = document.getElementById(`${platform}-download-btn`);
+      const buttonText = document.getElementById(`${platform}-btn-text`);
+      const downloadUrl = release?.downloadUrl;
+      let secureUrl = null;
+      if (downloadUrl) {
+        try {
+          const parsedUrl = new URL(downloadUrl);
+          if (parsedUrl.protocol === 'https:') secureUrl = parsedUrl.href;
+        } catch {
+          secureUrl = null;
+        }
+      }
+
+      button.disabled = !release?.available || !secureUrl;
+      if (button.disabled) {
+        status.textContent = isAndroid
+          ? 'Android source is available below; no installable APK release is published yet.'
+          : 'iOS source is available below; no signed App Store or TestFlight build is linked yet.';
+        buttonText.textContent = isAndroid ? 'APK release not published' : 'TestFlight link not set';
+        return;
+      }
+
+      status.textContent = `${release.channel || (isAndroid ? 'GitHub Release' : 'iOS')}${release.version ? ` · ${release.version}` : ''}`;
+      buttonText.textContent = isAndroid ? 'Download APK' : `Open ${release.channel || 'iOS app'}`;
+      button.onclick = () => window.open(secureUrl, '_blank', 'noopener,noreferrer');
+    }
+
+    async function loadReleaseCatalog() {
+      try {
+        const releases = await apiRequest('/v1/apps/releases');
+        updateReleaseCard('android', releases.android);
+        updateReleaseCard('ios', releases.ios);
+      } catch (error) {
+        for (const platform of ['android', 'ios']) {
+          document.getElementById(`${platform}-release-status`).textContent = 'Release information could not be loaded.';
+          document.getElementById(`${platform}-download-btn`).disabled = true;
+        }
+        console.error('Could not load app releases:', error);
+      }
+    }
+
+    signInButton.addEventListener('click', async () => {
+      try {
+        await clerkInstance?.openSignIn();
+      } catch (error) {
+        authStatus.textContent = error.message;
+      }
+    });
+    document.getElementById('save-idea-btn').addEventListener('click', saveCurrentIdea);
+    document.getElementById('refresh-ideas-btn').addEventListener('click', loadSavedIdeas);
+    form.addEventListener('submit', analyzeIdea);
+    clearBtn.addEventListener('click', clearForm);
+
+    void initializeClerk();
+    void checkAPI();
+    void loadReleaseCatalog();
+  </script>
+</body>
+</html>

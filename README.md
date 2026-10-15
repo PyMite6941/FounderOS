@@ -1,8 +1,10 @@
 # FounderOS
 
-> Status: **scaffold only.** Stack and product scope are not decided yet — Matt is sending the details.
+> Status: Website and FastAPI analyzer are in development. Native mobile clients are separate app projects.
 
 Repo: https://github.com/PyMite6941/FounderOS
+
+Website: https://founder-os-gold-iota.vercel.app/
 
 ## Layout
 
@@ -11,11 +13,16 @@ FounderOS/
 ├── backend/     # API + data + business logic (one shared backend for both apps)
 ├── appleUI/     # iOS / iPadOS / macOS client
 ├── androidUI/   # Android client
+├── web/         # Website and Clerk-backed saved ideas UI
+├── emulators/   # Android emulator + iOS simulator launch scripts
 ├── MEMORY.md    # local scratch memory — gitignored, never committed
 └── .gitignore
 ```
 
 Each folder has its own `README.md` with the open questions for that layer.
+
+The website uses the FastAPI backend for idea analysis, account-scoped saved ideas, and mobile
+release links. See [`web/README.md`](./web/README.md) for local setup and deployment.
 
 ## Working agreement
 

@@ -1,10 +1,12 @@
 # --- Local-only notes / agent memory ---
 MEMORY.md
+vercel-hosting-info.md
 
 # --- Secrets ---
 .env
 .env.*
 !.env.example
+web/config.js
 *.pem
 *.key
 secrets/
@@ -37,6 +39,9 @@ env/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+*.sqlite
+*.sqlite3
+*.db
 
 # --- Apple / Xcode (appleUI) ---
 xcuserdata/

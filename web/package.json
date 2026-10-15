@@ -1,0 +1,18 @@
+{
+  "name": "founderos-web",
+  "version": "1.0.0",
+  "description": "FounderOS — AI-powered startup idea analyzer web interface",
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env.local server.js",
+    "start": "node --env-file-if-exists=.env.local server.js",
+    "build": "node --env-file-if-exists=.env.local build-config.js"
+  },
+  "dependencies": {
+    "@clerk/express": "^2.1.78",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=22.9.0"
+  }
+}
