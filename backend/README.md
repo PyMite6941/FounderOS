@@ -38,7 +38,22 @@ and `MONGODB_DATABASE` for MongoDB Atlas. When no MongoDB URI is set, local deve
 at `backend/data/founderos.sqlite3`; `DATABASE_PATH` can override that local path. The Dockerfile
 remains an alternative containerized run path.
 
+If your Atlas connection string is in the ignored repository-root `atlas-credentials.env`, add
+`--env-file ..\atlas-credentials.env` to the Uvicorn command on Windows or
+`--env-file ../atlas-credentials.env` on macOS/Linux. Never commit that file.
+
 The current analyzer uses local keyword-based heuristics; it does not call an external AI service.
+
+## Production deployment
+
+The root [`render.yaml`](../render.yaml) defines a Render Blueprint for the FastAPI service. In
+Render, create a Blueprint from this repository and provide the requested `MONGODB_URI` and
+`CLERK_ISSUER` environment values. The service builds `backend/Dockerfile`, binds to Render's
+`PORT`, and uses `/health` as its health check.
+
+After Render assigns the service an HTTPS URL, set that URL as `API_BASE_URL` in the Vercel project
+and redeploy the website. If the public website domain changes, update `WEB_ORIGINS` and
+`CLERK_AUTHORIZED_PARTIES` on the backend service as well.
 
 ## What goes here
 

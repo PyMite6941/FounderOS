@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: founderos-backend
+    runtime: docker
+    plan: free
+    region: ohio
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DATABASE
+        value: founderos
+      - key: CLERK_ISSUER
+        sync: false
+      - key: WEB_ORIGINS
+        value: https://founder-os-gold-iota.vercel.app
+      - key: CLERK_AUTHORIZED_PARTIES
+        value: https://founder-os-gold-iota.vercel.app
+      - key: GITHUB_REPOSITORY
+        value: PyMite6941/FounderOS
+      - key: PYTHONUNBUFFERED
+        value: "1"

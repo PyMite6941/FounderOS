@@ -53,7 +53,8 @@ fail instead of silently switching to temporary SQLite storage.
 
 The Vercel project should use `web/` as its root directory, run `npm run build`, and publish `.`.
 Set `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `API_BASE_URL` in Vercel.
-`API_BASE_URL` must be the HTTPS URL of the separately deployed FastAPI service. The website
+[`render.yaml`](../render.yaml) defines a Render Blueprint for the FastAPI backend; after creating
+it, set `API_BASE_URL` to the Render service's HTTPS URL and redeploy the website. The website
 remains available if Clerk keys are missing, but the server logs a warning and Clerk middleware
 will be disabled. The backend must allow the Vercel origin in both `WEB_ORIGINS` and
 `CLERK_AUTHORIZED_PARTIES`.
