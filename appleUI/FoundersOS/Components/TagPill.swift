@@ -11,7 +11,7 @@ struct TagPill: View {
     let text: String
     var isSelected: Bool = false
     var onTap: (() -> Void)? = nil
-    
+
     var body: some View {
         Button(action: {
             onTap?()
@@ -20,8 +20,12 @@ struct TagPill: View {
                 .font(FounderTypography.footnote)
                 .fontWeight(.medium)
                 .foregroundColor(isSelected ? .white : .founderPrimaryText)
+                .lineLimit(nil)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, FounderSpacing.sm)
                 .padding(.vertical, FounderSpacing.xs)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .background(isSelected ? Color.founderAccent : Color.founderCard)
                 .cornerRadius(FounderCornerRadius.full)
                 .overlay(
@@ -72,39 +76,50 @@ struct FlowLayout: Layout {
             subviews: subviews,
             spacing: spacing
         )
-        
+
         for (index, subview) in subviews.enumerated() {
             let point = CGPoint(
                 x: bounds.minX + result.positions[index].x,
                 y: bounds.minY + result.positions[index].y
             )
-            subview.place(at: point, anchor: .topLeading, proposal: .unspecified)
+            // Propose the row width so a single long tag can wrap onto
+            // multiple lines instead of being clipped off-screen.
+            subview.place(
+                at: point,
+                anchor: .topLeading,
+                proposal: ProposedViewSize(width: bounds.width, height: nil)
+            )
         }
     }
-    
+
     struct FlowResult {
         var size: CGSize = .zero
         var positions: [CGPoint] = []
-        
+
         init(in maxWidth: CGFloat, subviews: Subviews, spacing: CGFloat) {
             var x: CGFloat = 0
             var y: CGFloat = 0
             var rowHeight: CGFloat = 0
-            
+
             for subview in subviews {
-                let size = subview.sizeThatFits(.unspecified)
-                
-                if x + size.width > maxWidth && x > 0 {
+                // Measure at the full row width so a single over-long tag
+                // wraps onto multiple lines and reserves the height it needs.
+                let measured = subview.sizeThatFits(
+                    ProposedViewSize(width: maxWidth, height: nil)
+                )
+                let subWidth = min(measured.width, maxWidth)
+
+                if x > 0 && x + subWidth > maxWidth {
                     x = 0
                     y += rowHeight + spacing
                     rowHeight = 0
                 }
-                
+
                 positions.append(CGPoint(x: x, y: y))
-                rowHeight = max(rowHeight, size.height)
-                x += size.width + spacing
+                rowHeight = max(rowHeight, measured.height)
+                x += subWidth + spacing
             }
-            
+
             self.size = CGSize(width: maxWidth, height: y + rowHeight)
         }
     }

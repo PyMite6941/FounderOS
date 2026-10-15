@@ -171,6 +171,23 @@ class PersistenceService {
         }
     }
     
+    /// Update the list of completed MVP features (check-in state per feature).
+    /// - Parameters:
+    ///   - idea: The startup idea to update
+    ///   - completed: The new list of completed MVP feature names
+    ///   - context: The SwiftData model context
+    func updateCompletedMvpFeatures(_ idea: StartupIdea, completed: [String], context: ModelContext) {
+        idea.completedMvpFeatures = completed
+        idea.updatedAt = Date()
+
+        do {
+            try context.save()
+            print("✅ MVP completion updated: \(completed.count) items")
+        } catch {
+            print("❌ Failed to update MVP completion: \(error.localizedDescription)")
+        }
+    }
+
     /// Update startup status
     /// - Parameters:
     ///   - idea: The startup idea to update
