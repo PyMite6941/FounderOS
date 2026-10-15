@@ -20,6 +20,10 @@ load_dotenv(repository_root / "backend" / ".env", override=False)
 logger = logging.getLogger(__name__)
 app = FastAPI(title="FounderOS Backend", version="0.2.0")
 
+@app.get("/")
+def root():
+    return {"message": "Welcome to FounderOS API", "docs": "/health", "available": ["/health", "/v1/apps/releases", "/v1/analyze"]}
+
 default_origins = [
     "https://founder-os-gold-iota.vercel.app",
     "http://localhost:3000",
