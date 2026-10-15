@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 
@@ -7,14 +8,19 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app import main
-from app.auth import get_current_user_id
+from app import main, storage
+from app.auth import get_current_user_id, get_optional_current_user_id
 from app.main import app
 
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "founderos.sqlite3"))
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.delenv("POSTGRES_URL", raising=False)
+    monkeypatch.delenv("POSTGRESQL_URL", raising=False)
+    monkeypatch.delenv("MONGODB_URI", raising=False)
+    monkeypatch.delenv("MONGO_URI", raising=False)
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
@@ -24,19 +30,83 @@ def test_health(client):
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+    assert response.json()["database"] == "sqlite"
 
 
 def test_analyze_idea(client):
+    idea = "An AI-powered app that helps people find study partners"
     response = client.post(
         "/v1/analyze",
-        json={"idea": "An AI-powered app that helps people find study partners"},
+        json={"idea": idea, "client": "web"},
     )
     assert response.status_code == 200
-    analysis = response.json()["analysis"]
+    payload = response.json()
+    analysis = payload["analysis"]
     assert analysis["startupName"] == "AI-Powered Idea"
     assert analysis["problem"]
     assert analysis["solution"]
     assert analysis["id"]
+    assert payload["conversationId"] == analysis["id"]
+
+    messages = storage.get_conversation_messages(payload["conversationId"])
+    assert [message["role"] for message in messages] == ["user", "assistant"]
+    assert messages[0]["content"] == idea
+    assert messages[0]["client"] == "web"
+    assert messages[0]["userId"] is None
+    assert json.loads(messages[1]["content"]) == analysis
+
+
+def test_analyze_stores_authenticated_user_and_mobile_client(client):
+    app.dependency_overrides[get_optional_current_user_id] = lambda: "user_123"
+    response = client.post(
+        "/v1/analyze",
+        json={"idea": "An app for planning workouts", "client": "ios"},
+    )
+    assert response.status_code == 200
+
+    messages = storage.get_conversation_messages(response.json()["conversationId"])
+    assert [message["userId"] for message in messages] == ["user_123", "user_123"]
+    assert [message["client"] for message in messages] == ["ios", "ios"]
+
+
+def test_mongodb_persists_user_and_assistant_messages(client, monkeypatch):
+    class FakeCollection:
+        def __init__(self):
+            self.documents = {}
+
+        def insert_one(self, document):
+            self.documents[document["_id"]] = document
+
+        def find_one(self, query):
+            return self.documents.get(query["_id"])
+
+    class FakeDatabase:
+        def __init__(self):
+            self.conversations = FakeCollection()
+
+    class FakeMongoClient:
+        def __init__(self):
+            self.database = FakeDatabase()
+
+        def __getitem__(self, _name):
+            return self.database
+
+    mongo_client = FakeMongoClient()
+    monkeypatch.setenv("MONGODB_URI", "mongodb+srv://test.invalid/")
+    monkeypatch.setenv("MONGODB_DATABASE", "founderos_test")
+    monkeypatch.setattr(storage, "_mongo_client", lambda _uri: mongo_client)
+
+    response = client.post(
+        "/v1/analyze",
+        json={"idea": "An AI assistant for independent artists", "client": "android"},
+    )
+    assert response.status_code == 200
+
+    conversation_id = response.json()["conversationId"]
+    messages = storage.get_conversation_messages(conversation_id)
+    assert [message["role"] for message in messages] == ["user", "assistant"]
+    assert [message["client"] for message in messages] == ["android", "android"]
+    assert mongo_client.database.conversations.documents[conversation_id]["userId"] is None
 
 
 def test_analyze_empty_idea(client):

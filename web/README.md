@@ -34,6 +34,7 @@ config generated at build time instead.
 ## Features and API
 
 - Analyze ideas anonymously with `POST /v1/analyze`.
+- Persist each successful prompt and its structured AI response in the backend database.
 - Sign in or create an account through Clerk.
 - Save, list, reopen, and delete personal ideas through the authenticated `/v1/ideas` endpoints.
 - Discover the latest Android APK from the public GitHub Releases API.
@@ -43,8 +44,10 @@ config generated at build time instead.
 Source-code links are not phone installers. Android installation requires a published APK asset
 in a GitHub Release; iOS installation requires a signed App Store or TestFlight distribution link.
 
-Saved ideas are stored in SQLite at the backend's `DATABASE_PATH`. Configure a persistent mounted
-volume for production; ephemeral serverless storage will not retain saved ideas across restarts.
+Conversation messages and saved ideas use MongoDB Atlas when the backend has `MONGODB_URI` and
+`MONGODB_DATABASE` configured. Local development falls back to SQLite. Configure the backend with
+the Atlas URI in production; when MongoDB is configured but unreachable, health checks and writes
+fail instead of silently switching to temporary SQLite storage.
 
 ## Vercel deployment
 

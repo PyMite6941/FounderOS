@@ -414,6 +414,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
+				FOUNDEROS_API_BASE_URL = "http://127.0.0.1:8000";
 				INFOPLIST_FILE = FoundersOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -612,6 +613,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
+				FOUNDEROS_API_BASE_URL = "http://127.0.0.1:8000";
 				INFOPLIST_FILE = FoundersOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

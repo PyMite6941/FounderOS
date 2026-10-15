@@ -3,7 +3,7 @@ MEMORY.md
 vercel-hosting-info.md
 
 # --- Secrets ---
-.env
+*.env
 .env.*
 !.env.example
 web/config.js

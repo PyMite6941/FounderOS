@@ -72,7 +72,11 @@ app.use((request, response) => {
   response.status(404).send("Not found");
 });
 
-app.listen(port, () => {
-  console.log(`FounderOS website running at http://localhost:${port}`);
-  console.log(`Proxying backend API to ${backendUrl}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`FounderOS website running at http://localhost:${port}`);
+    console.log(`Proxying backend API to ${backendUrl}`);
+  });
+}
+
+export default app;

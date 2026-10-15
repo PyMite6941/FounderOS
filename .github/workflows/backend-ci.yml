@@ -14,19 +14,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+        working-directory: backend
       - name: Run tests
         run: python -m pytest tests/ -v
+        working-directory: backend
       - name: Lint
         run: |
           pip install ruff
           ruff check app/
+        working-directory: backend
 
   build:
     needs: test
@@ -35,14 +38,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install dependencies
-        run: python -m pip install docker
       - name: Build Docker image
-        run: docker build -t founderos-backend:latest ./app
+        run: docker build -t founderos-backend:latest -f backend/Dockerfile backend
+      - name: Check Docker registry configuration
+        id: docker-registry
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_USER }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+        run: |
+          if [ -n "$DOCKER_USER" ] && [ -n "$DOCKER_TOKEN" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Push Docker image
+        if: steps.docker-registry.outputs.configured == 'true'
         env:
           DOCKER_USER: ${{ secrets.DOCKER_USER }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}

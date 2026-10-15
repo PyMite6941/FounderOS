@@ -7,6 +7,10 @@ Kotlin source files are present under `app/src/main/java`. This directory is cur
 not a buildable or installable Android app: it has no Gradle project, wrapper, manifest, or app
 entry point. No APK is published yet.
 
+The analysis service posts to the shared backend and labels requests as `android`; the backend
+persists the prompt and analysis together. Its default host, `10.0.2.2:8000`, is for the Android
+emulator talking to a backend running on the development computer.
+
 ## Rules
 
 - Talk to the backend only through the contract in `backend/README.md`.

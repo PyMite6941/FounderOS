@@ -61,3 +61,9 @@ def get_current_user_id(authorization: str | None = Header(default=None)) -> str
     if not isinstance(user_id, str) or not user_id:
         raise HTTPException(status_code=401, detail="Clerk session does not identify a user")
     return user_id
+
+
+def get_optional_current_user_id(authorization: str | None = Header(default=None)) -> str | None:
+    if not authorization:
+        return None
+    return get_current_user_id(authorization)

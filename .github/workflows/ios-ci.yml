@@ -9,40 +9,18 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        xcode-version: ['14.2', '14.1']
-
+    runs-on: macos-15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Xcode #{{
-        uses: maximizing-xcode/setup-xcode@v4
-        with:
-          xcode-version: ${{ matrix.xcode-version }}
-
-      - name: Validate Xcode project
+      - name: Build iOS app for simulator
         run: |
-          set -o pipefail
-          xcodeapplever=$(xcode --version | head -1 | awk '{print $2}')
-          echo "Xcode version: $xcodeapplever"
-          
-          # Validate the project file
-          xcodefoundationpaths=$(xcodedir=/Applications/Developer/Xcode.app xcode --project FoundersOS.xcodeproj --allow-missing-profile validate 2>&1 || true)
-          echo "Project validation complete"
-
-      - name: List iOS project structure
-        run: |
-          echo "AppleUI structure:"
-          find appleUI/FoundersOS -name "*.swift" -type f | head -20
-          echo "---"
-          echo "iOS SDK available at: $(xcode -find-path sdk 2>/dev/null || echo 'sdk path check skipped')"
-
-      - name: Report iOS project status
-        run: |
-          echo "✅ iOS CI check completed"
-          echo "Project: FoundersOS"
-          echo "Platform: iOS (SwiftUI)"
-          echo "Xcode matrix: ${{ matrix.xcode-version }}"
+          xcodebuild \
+            -project appleUI/FoundersOS.xcodeproj \
+            -scheme FoundersOS \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build

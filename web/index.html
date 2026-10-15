@@ -766,7 +766,8 @@
       try {
         const data = await apiRequest('/v1/analyze', {
           method: 'POST',
-          body: JSON.stringify({ idea }),
+          authenticated: Boolean(clerkInstance?.isSignedIn),
+          body: JSON.stringify({ idea, client: 'web' }),
         });
         currentIdea = idea;
         renderResults(data.analysis);

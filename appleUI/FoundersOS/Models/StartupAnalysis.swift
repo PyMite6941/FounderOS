@@ -116,10 +116,12 @@ struct StartupAnalysis: Codable, Identifiable {
 struct AIResponse: Codable {
     var analysis: StartupAnalysis?
     var error: String?
+    var conversationId: String?
     
     enum CodingKeys: String, CodingKey {
         case analysis = "analysis"
         case error = "error"
+        case conversationId = "conversationId"
     }
 }
 

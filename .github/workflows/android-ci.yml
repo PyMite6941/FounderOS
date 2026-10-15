@@ -1,89 +1,79 @@
 name: Android CI/CD
+
 on:
   push:
     branches: [main]
+    paths:
+      - "androidUI/**"
+      - ".github/workflows/android-ci.yml"
   pull_request:
     branches: [main]
+    paths:
+      - "androidUI/**"
+      - ".github/workflows/android-ci.yml"
   workflow_dispatch:
 
 jobs:
   ci:
     runs-on: ubuntu-latest
+    outputs:
+      buildable: ${{ steps.android-project.outputs.buildable }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Check for a Gradle Android project
+        id: android-project
+        run: |
+          if [ -x androidUI/gradlew ] && \
+            { [ -f androidUI/settings.gradle ] || [ -f androidUI/settings.gradle.kts ]; } && \
+            { [ -f androidUI/app/build.gradle ] || [ -f androidUI/app/build.gradle.kts ]; }; then
+            echo "buildable=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "buildable=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Android source files are present, but the Gradle project and wrapper are missing; build and APK upload are skipped."
+          fi
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        if: steps.android-project.outputs.buildable == 'true'
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
-      - name: Cache Gradle
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: Build debug APK and run tests
+        if: steps.android-project.outputs.buildable == 'true'
+        run: |
+          ./gradlew assembleDebug testDebugUnitTest --no-daemon
+        working-directory: androidUI
 
-      - name: Grant execute permissions for Gradle
-        run: chmod +x gradlew
-
-      - name: Build debug APK
-        run: ./gradlew assembleDebug --no-daemon
-
-      - name: Run unit tests
-        run: ./gradlew testDebugUnitTest --no-daemon
-
-      - name: Upload debug APK artifact
-        uses: actions/upload-artifact@v3
+      - name: Upload debug APK
+        if: steps.android-project.outputs.buildable == 'true'
+        uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: androidUI/app/build/outputs/apk/debug/*.apk
 
-  cd:
+  release:
     needs: ci
+    if: github.ref == 'refs/heads/main' && needs.ci.outputs.buildable == 'true'
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    environment: production
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
-      - name: Cache Gradle
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: Build release bundle
+        run: ./gradlew bundleRelease --no-daemon
+        working-directory: androidUI
 
-      - name: Build signed AAB
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE }}
-        run: |
-          ./gradlew bundleRelease --no-daemon \
-          -Pandroid.signingKeyStore=$KEYSTORE_FILE \
-          -Pandroid.signingKeyAlias=$KEY_ALIAS \
-          -Pandroid.signingKeyPassword=$KEY_PASSWORD \
-          -Pandroid.signingStorePassword=$KEYSTORE_PASSWORD
-
-      - name: Upload AAB artifact
-        uses: actions/upload-artifact@v3
+      - name: Upload release bundle
+        uses: actions/upload-artifact@v4
         with:
           name: release-bundle
-          path: app/build/outputs/bundle/release/app-release.aab
+          path: androidUI/app/build/outputs/bundle/release/*.aab

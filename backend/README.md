@@ -33,16 +33,17 @@ The API is available at `http://localhost:8000`; interactive API docs are at
 
 On Windows, use `.venv\Scripts\python.exe -m pytest` instead.
 
-Copy `.env.example` to `.env` and configure Clerk before using account endpoints. The local
-database defaults to `backend/data/founderos.sqlite3`; set `DATABASE_PATH` to a persistent
-volume path on the backend host. The Dockerfile remains an alternative containerized run path.
+Copy `.env.example` to `.env` and configure Clerk before using account endpoints. Set `MONGODB_URI`
+and `MONGODB_DATABASE` for MongoDB Atlas. When no MongoDB URI is set, local development uses SQLite
+at `backend/data/founderos.sqlite3`; `DATABASE_PATH` can override that local path. The Dockerfile
+remains an alternative containerized run path.
 
 The current analyzer uses local keyword-based heuristics; it does not call an external AI service.
 
 ## What goes here
 
 - API routes + request/response schemas
-- SQLite persistence for saved ideas
+- MongoDB persistence for conversation messages and saved ideas, with SQLite for local development
 - Clerk session-token verification for account endpoints
 - Mobile app release metadata from GitHub Releases and an App Store/TestFlight URL
 - Scheduled or background work
@@ -62,8 +63,8 @@ METHOD /path
 
 | Method | Path        | Auth | Request          | Response                                      | Description                     |
 | ------ | ----------- | ---- | ---------------- | --------------------------------------------- | ------------------------------- |
-| GET    | /health                   | none          | —                | `{status, service}`                                 | Health check |
-| POST   | /v1/analyze               | none          | `{idea: string}` | `{analysis: StartupAnalysis, error?: string}`       | Analyze an idea without saving it |
+| GET    | /health                   | none          | —                | `{status, service, database}`                       | Database-backed health check |
+| POST   | /v1/analyze               | optional Clerk | `{idea, client?}` | `{analysis, conversationId}`                       | Analyze and persist user + assistant messages |
 | GET    | /v1/apps/releases         | none          | —                | `{android, ios}`                                    | Published mobile build links |
 | GET    | /v1/auth/me               | Clerk session | Bearer token     | `{userId}`                                          | Verify the current Clerk user |
 | POST   | /v1/ideas                 | Clerk session | `{idea: string}` | `{id, idea, analysis, createdAt}`                   | Analyze and save an idea |
@@ -90,8 +91,17 @@ IPA directly.
 The website also links to the Android and iOS source directories and a repository ZIP. These
 source downloads are not installable phone apps.
 
-SQLite needs persistent disk storage in production. Set `DATABASE_PATH` to a mounted persistent
-volume; do not use an ephemeral serverless filesystem for saved ideas.
+Set `MONGODB_URI` and `MONGODB_DATABASE` for production. The backend uses the `conversations` and
+`saved_ideas` collections in that database. If `MONGODB_URI` is unset, SQLite is used for local
+development. MongoDB health is checked by `/health`; a configured but unreachable MongoDB instance
+causes the health check and database writes to fail rather than silently switching databases.
+
+Every successful `/v1/analyze` call stores the trimmed user prompt and structured assistant
+analysis as two message entries in the `conversations` collection. Both entries share a
+conversation ID and record the client (`web`, `ios`, or `android`); valid Clerk sessions are
+associated with the Clerk user ID. Requests without a session are still persisted with a null user
+ID. Message content is not written to application logs. Local SQLite stores the same entries as
+rows in `conversation_messages`.
 
 ### StartupAnalysis schema
 
@@ -114,7 +124,8 @@ volume; do not use an ephemeral serverless filesystem for saved ideas.
 ```json
 POST /v1/analyze
 {
-  "idea": "An AI-powered app that helps people find study partners"
+  "idea": "An AI-powered app that helps people find study partners",
+  "client": "web"
 }
 ```
 
@@ -137,7 +148,8 @@ POST /v1/analyze
 		],
 		"nextStep": "Build MVP prototype",
 		"laterFeatures": ["Advanced ML models", "Predictive analytics"]
-	}
+	},
+	"conversationId": "abc123def456"
 }
 ```
 
@@ -145,7 +157,7 @@ POST /v1/analyze
 
 - Language/framework? → FastAPI (Python) selected
 - Web account provider? → Clerk
-- Local persistence? → SQLite; production requires a persistent volume
+- Local persistence? → SQLite for development; MongoDB Atlas for production
 - Android distribution? → APK asset on a GitHub Release
 - iOS distribution? → App Store or TestFlight URL configured by the release owner
 - Backend hosting? → Still needs to be selected; Vercel hosts the static website

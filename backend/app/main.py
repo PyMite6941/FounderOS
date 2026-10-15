@@ -1,6 +1,8 @@
 import logging
 import os
 import uuid
+from pathlib import Path
+from typing import Literal
 from urllib.parse import urlparse
 
 import httpx
@@ -9,11 +11,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
-from app.auth import get_current_user_id
+from app.auth import get_current_user_id, get_optional_current_user_id
 from app import storage
 
 
-load_dotenv()
+repository_root = Path(__file__).resolve().parents[2]
+load_dotenv(repository_root / ".env", override=False)
+load_dotenv(repository_root / "backend" / ".env", override=False)
 logger = logging.getLogger(__name__)
 app = FastAPI(title="FounderOS Backend", version="0.2.0")
 
@@ -38,6 +42,7 @@ app.add_middleware(
 
 class IdeaRequest(BaseModel):
     idea: str = Field(max_length=4000)
+    client: Literal["web", "ios", "android"] = "web"
 
 
 class StartupAnalysis(BaseModel):
@@ -57,6 +62,7 @@ class StartupAnalysis(BaseModel):
 class AIResponse(BaseModel):
     analysis: StartupAnalysis
     error: str = ""
+    conversationId: str
 
 
 class SaveIdeaRequest(BaseModel):
@@ -223,7 +229,12 @@ def _ios_release() -> dict:
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "founderos-backend"}
+    storage.check_database()
+    return {
+        "status": "ok",
+        "service": "founderos-backend",
+        "database": storage.database_backend(),
+    }
 
 
 @app.get("/v1/apps/releases")
@@ -240,10 +251,21 @@ def current_user(user_id: str = Depends(get_current_user_id)):
 
 
 @app.post("/v1/analyze", response_model=AIResponse)
-def analyze_idea(request: IdeaRequest):
-    if not request.idea.strip():
+def analyze_idea(
+    request: IdeaRequest,
+    user_id: str | None = Depends(get_optional_current_user_id),
+):
+    idea = request.idea.strip()
+    if not idea:
         raise HTTPException(status_code=400, detail="Idea cannot be empty")
-    return AIResponse(analysis=analyze_idea_text(request.idea.strip()))
+    analysis = analyze_idea_text(idea)
+    conversation_id = storage.save_analysis_messages(
+        user_id,
+        request.client,
+        idea,
+        analysis.model_dump(mode="json"),
+    )
+    return AIResponse(analysis=analysis, conversationId=conversation_id)
 
 
 @app.post("/v1/ideas", status_code=201)
