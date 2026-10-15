@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FounderOS — Startup Idea Analyzer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-secondary: #12121a;
+      --fg: #e8e8f0;
+      --muted: #6b6b80;
+      --accent: #00d4aa;
+      --accent-dim: rgba(0, 212, 170, 0.15);
+      --card: #161620;
+      --border: #2a2a3a;
+      --error: #ff4757;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      margin: 0;
+    }
+    
+    .bg-pattern {
+      background-image: 
+        radial-gradient(circle at 20% 20%, rgba(0, 212, 170, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 212, 170, 0.02) 0%, transparent 50%);
+    }
+    
+    .gradient-bg {
+      background: linear-gradient(180deg, var(--bg) 0%, var(--bg-secondary) 100%);
+    }
+    
+    .glass-card {
+      background: rgba(18, 18, 26, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+    }
+    
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0, 212, 170, 0.3);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      color: var(--fg);
+      font-weight: 500;
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    
+    .input-field {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--fg);
+      font-size: 1rem;
+      width: 100%;
+      transition: all 0.2s ease;
+    }
+    
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+    
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--fg);
+    }
+    
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--bg-secondary);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .result-card {
+      animation: fadeInUp 0.3s ease;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .tag {
+      display: inline-block;
+      background: var(--accent-dim);
+      color: var(--accent);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin: 2px;
+    }
+    
+    @media (max-width: 640px) {
+      .mobile-full-width {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="bg-pattern min-h-screen p-4 md:p-8">
+  
+  <div class="max-w-2xl mx-auto w-full">
+    
+    <!-- Header -->
+    <header class="mb-8 glass-card rounded-xl p-6 border-y border-border mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-2">
+        FounderOS
+      </h1>
+      <p class="text-sm md:text-base text-muted">
+        AI-powered startup idea analyzer
+      </p>
+    </header>
+    
+    <!-- Analysis Form -->
+    <div class="glass-card rounded-xl p-6 border-y border-border mb-8">
+      <h2 class="section-title mb-4">Analyze Your Startup Idea</h2>
+      
+      <form id="idea-form" novalidate>
+        <div>
+          <textarea 
+            id="idea-input"
+            class="input-field w-full h-24 md:h-32 rounded-xl px-4 py-3 resize-none focus-state mb-4"
+            placeholder="Enter your startup idea..."
+            rows="2"
+            required
+          ></textarea>
+          <label for="idea-input" class="text-sm md:text-base text-muted mb-2 block">What are you thinking about?</label>
+        </div>
+        
+        <div class="flex gap-3">
+          <button 
+            type="submit"
+            id="analyze-btn"
+            class="btn-primary flex-1 py-3 rounded-xl font-medium"
+          >
+            Analyze Idea
+          </button>
+          <button 
+            type="button"
+            id="clear-btn"
+            class="btn-secondary py-3 rounded-xl font-medium"
+          >
+            Clear
+          </button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Results Section -->
+    <div id="results" class="glass-card rounded-xl p-6 border-y border-border hidden">
+      <h2 class="section-title mb-4">Analysis Results</h2>
+      
+      <div id="result-content">
+        <!-- Filled in by JS -->
+      </div>
+    </div>
+    
+    <!-- Error State -->
+    <div id="error" class="glass-card rounded-xl p-6 border-y border-border hidden" style="border-color: var(--error);">
+      <p class="text-error text-sm md:text-base" id="error-msg">Something went wrong. Please try again.</p>
+    </div>
+    
+    <!-- Loading State -->
+    <div id="loading" class="loading-overlay hidden" role="alert" aria-live="polite">
+      <div>
+        <div class="spinner"></div>
+        <span class="ml-4 text-muted">Analyzing...</span>
+      </div>
+    </div>
+    
+  </div>
+
+  <script>
+    // Check if we're running locally or via the backend
+    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://127.0.0.1:8787'  // Local backend
+      : '';  // Production - relative path
+
+    const form = document.getElementById('idea-form');
+    const ideaInput = document.getElementById('idea-input');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const resultsDiv = document.getElementById('results');
+    const resultContent = document.getElementById('result-content');
+    const errorDiv = document.getElementById('error');
+    const errorMsg = document.getElementById('error-msg');
+    const loadingDiv = document.getElementById('loading');
+
+    // Check API availability
+    async function checkAPI() {
+      try {
+        const res = await fetch(`${API_BASE}/health`);
+        if (res.ok) {
+          console.log('Backend API is available');
+          return true;
+        }
+      } catch (e) {
+        console.warn('Backend API not available at', API_BASE);
+      }
+      return false;
+    }
+
+    // Show loading state
+    function setLoading(loading) {
+      if (loading) {
+        loadingDiv.classList.remove('hidden');
+        analyzeBtn.disabled = true;
+        analyzeBtn.textContent = 'Analyzing...';
+      } else {
+        loadingDiv.classList.add('hidden');
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = 'Analyze Idea';
+      }
+    }
+
+    // Show error
+    function showError(message) {
+      errorDiv.classList.remove('hidden');
+      errorMsg.textContent = message || 'Something went wrong. Please try again.';
+      resultsDiv.classList.add('hidden');
+    }
+
+    // Hide error
+    function hideError() {
+      errorDiv.classList.add('hidden');
+    }
+
+    // Render results
+    function renderResults(analysis) {
+      const tagline = analysis.tagline || '';
+      const problem = analysis.problem || '';
+      const solution = analysis.solution || '';
+      const mvpFeatures = analysis.mvpFeatures || [];
+      const businessModel = analysis.businessModel || '';
+      const nextStep = analysis.nextStep || '';
+      const targetUsers = analysis.targetUsers || [];
+      
+      const tagsHtml = targetUsers.map(u => `<span class="tag">${u}</span>`).join('');
+      
+      const featuresHtml = mvpFeatures.map(f => `<li>${f}</li>`).join('') || '<li class="text-muted">No MVP features specified</li>';
+      
+      resultContent.innerHTML = `
+        <div class="grid lg:grid-cols-2 gap-6">
+          <!-- Left column -->
+          <div>
+            <h3 class="font-semibold mb-3">Startup Name</h3>
+            <p class="font-medium" id="startup-name">${analysis.startupName || '—'}</p>
+            
+            <p class="mt-4 text-sm md:text-base text-muted leading-relaxed">
+              ${problem}
+            </p>
+            
+            <p class="mt-4 text-sm md:text-base text-muted">
+              ${solution}
+            </p>
+            
+            <details class="mt-4">
+              <summary class="cursor-pointer text-sm md:text-base text-accent underline">Target Users</summary>
+              <div class="mt-2">${tagsHtml}</div>
+            </details>
+          </div>
+          
+          <!-- Right column -->
+          <div>
+            <h3 class="font-semibold mb-3">Tagline</h3>
+            <p class="font-medium" id="tagline">${tagline}</p>
+            
+            <h3 class="font-semibold mt-6 mb-3">Solution</h3>
+            <p class="font-medium">${solution}</p>
+            
+            <h3 class="font-semibold mt-6 mb-3">MVP Features</h3>
+            <ol class="space-y-2">${featuresHtml}</ol>
+            
+            <div class="mt-4 p-3 rounded-xl bg-accent-dim">
+              <p class="font-medium mb-2">Business Model</p>
+              <p class="text-sm">${businessModel}</p>
+            </div>
+            
+            <div class="mt-6 p-3 rounded-xl bg-card">
+              <p class="font-medium mb-2">Next Step</p>
+              <p>${nextStep}</p>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      resultsDiv.classList.remove('hidden');
+      resultsDiv.classList.add('result-card');
+    }
+
+    // Analyze idea
+    async function analyzeIdea(event) {
+      event.preventDefault();
+      
+      const idea = ideaInput.value.trim();
+      if (!idea) return;
+      
+      hideError();
+      setLoading(true);
+      
+      try {
+        const res = await fetch(`${API_BASE}/v1/analyze`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ idea }),
+        });
+        
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || `Server error: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        renderResults(data.analysis);
+      } catch (err) {
+        console.error('Analysis error:', err);
+        showError(err.message || 'Failed to analyze idea. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Clear form
+    function clearForm() {
+      ideaInput.value = '';
+      resultsDiv.classList.add('hidden');
+      errorDiv.classList.add('hidden');
+    }
+
+    // Event listeners
+    form.addEventListener('submit', analyzeIdea);
+    clearBtn.addEventListener('click', clearForm);
+    
+    // Initialize
+    checkAPI().then(available => {
+      if (!available) {
+        showError('Backend API not running. Please start the backend server at http://127.0.0.1:8787');
+      }
+    });
+  </script>
+</body>
+</html>
