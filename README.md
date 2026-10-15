@@ -11,6 +11,7 @@ FounderOS/
 ├── backend/     # API + data + business logic (one shared backend for both apps)
 ├── appleUI/     # iOS / iPadOS / macOS client
 ├── androidUI/   # Android client
+├── emulators/   # Android emulator + iOS simulator launch scripts
 ├── MEMORY.md    # local scratch memory — gitignored, never committed
 └── .gitignore
 ```
