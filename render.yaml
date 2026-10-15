@@ -12,7 +12,7 @@ services:
       - key: MONGODB_URI
         sync: false
       - key: DATABASE_PATH
-        value: ./data/foundoros.sqlite3
+        value: /app/data/foundoros.sqlite3
       - key: CLERK_ISSUER
         sync: false
       - key: WEB_ORIGINS
