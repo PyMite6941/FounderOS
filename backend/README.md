@@ -33,14 +33,18 @@ The API is available at `http://localhost:8000`; interactive API docs are at
 
 On Windows, use `.venv\Scripts\python.exe -m pytest` instead.
 
-The current analyzer uses local keyword-based heuristics; it does not call an external AI
-service. The Dockerfile remains an alternative containerized install and run path.
+Copy `.env.example` to `.env` and configure Clerk before using account endpoints. The local
+database defaults to `backend/data/founderos.sqlite3`; set `DATABASE_PATH` to a persistent
+volume path on the backend host. The Dockerfile remains an alternative containerized run path.
+
+The current analyzer uses local keyword-based heuristics; it does not call an external AI service.
 
 ## What goes here
 
 - API routes + request/response schemas
-- Persistence layer (models, migrations) — currently in-memory, swap in Neon/Supabase/SQLite as needed
-- Auth / session handling — device-scoped tokens via JWT
+- SQLite persistence for saved ideas
+- Clerk session-token verification for account endpoints
+- Mobile app release metadata from GitHub Releases and an App Store/TestFlight URL
 - Scheduled or background work
 - Tests
 
@@ -58,8 +62,36 @@ METHOD /path
 
 | Method | Path        | Auth | Request          | Response                                      | Description                     |
 | ------ | ----------- | ---- | ---------------- | --------------------------------------------- | ------------------------------- |
-| GET    | /health     | none | —                | `{status, service}`                           | Health check                    |
-| POST   | /v1/analyze | none | `{idea: string}` | `{analysis: StartupAnalysis, error?: string}` | Analyze a startup idea using AI |
+| GET    | /health                   | none          | —                | `{status, service}`                                 | Health check |
+| POST   | /v1/analyze               | none          | `{idea: string}` | `{analysis: StartupAnalysis, error?: string}`       | Analyze an idea without saving it |
+| GET    | /v1/apps/releases         | none          | —                | `{android, ios}`                                    | Published mobile build links |
+| GET    | /v1/auth/me               | Clerk session | Bearer token     | `{userId}`                                          | Verify the current Clerk user |
+| POST   | /v1/ideas                 | Clerk session | `{idea: string}` | `{id, idea, analysis, createdAt}`                   | Analyze and save an idea |
+| GET    | /v1/ideas                 | Clerk session | Bearer token     | `{ideas: [...]}`                                    | List the signed-in user's saved ideas |
+| DELETE | /v1/ideas/{idea_id}       | Clerk session | Bearer token     | `204 No Content`                                    | Delete one of the signed-in user's ideas |
+
+### Configuration
+
+`CLERK_ISSUER` is the issuer shown in a Clerk session token. `CLERK_JWKS_URL` is optional; when
+omitted, the backend loads keys from `{CLERK_ISSUER}/.well-known/jwks.json`. The backend verifies
+the token signature, issuer, expiry, and (when present) the authorized-party origin. Never put a
+Clerk secret key in the web client.
+
+`WEB_ORIGINS` and `CLERK_AUTHORIZED_PARTIES` default to the production website
+(`https://founder-os-gold-iota.vercel.app`) plus local development origins. Set them explicitly
+when using a different domain.
+
+`GITHUB_REPOSITORY` selects the public GitHub repository whose latest release is checked for an
+APK (defaults to `PyMite6941/FounderOS`). The iOS card is enabled only when
+`IOS_DISTRIBUTION_URL` is set to an HTTPS App Store or TestFlight link. iOS apps must be
+distributed through Apple's signing and distribution flow; the site cannot install an arbitrary
+IPA directly.
+
+The website also links to the Android and iOS source directories and a repository ZIP. These
+source downloads are not installable phone apps.
+
+SQLite needs persistent disk storage in production. Set `DATABASE_PATH` to a mounted persistent
+volume; do not use an ephemeral serverless filesystem for saved ideas.
 
 ### StartupAnalysis schema
 
@@ -112,6 +144,8 @@ POST /v1/analyze
 ## Open questions
 
 - Language/framework? → FastAPI (Python) selected
-- Database and where it's hosted? → Neon (PostgreSQL) or SQLite for local dev
-- Auth: accounts, or device-scoped tokens? → JWT device tokens
-- Deploy target, and does it need to be free-tier? → Docker + Railway/Render free tier
+- Web account provider? → Clerk
+- Local persistence? → SQLite; production requires a persistent volume
+- Android distribution? → APK asset on a GitHub Release
+- iOS distribution? → App Store or TestFlight URL configured by the release owner
+- Backend hosting? → Still needs to be selected; Vercel hosts the static website

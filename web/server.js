@@ -1,45 +1,78 @@
-// FounderOS Web UI Server
-// Serves the static web UI and provides API support
-
-import express from 'express';
-import path from 'path';
-import fs from 'fs';
+import { clerkMiddleware } from "@clerk/express";
+import express from "express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const __dirname = path.resolve();
+const port = Number(process.env.PORT || 3000);
+const webDirectory = path.dirname(fileURLToPath(import.meta.url));
+const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8000";
 
-# Serve static files from the web directory
-app.use(express.static(path.join(__dirname, '.'), {
-    index: 'index.html',
-    setHeaders: (res, pathname) => {
-        # Cache static assets
-        if pathname.endsWith('.css') || pathname.endsWith('.js') || pathname.endsWith('.png') || pathname.endsWith('.svg') || pathname.endsWith('.json'):
-            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+app.use(clerkMiddleware());
+app.use(express.json({ limit: "1mb" }));
+
+app.get("/config.js", (_request, response) => {
+  response
+    .set("Cache-Control", "no-store")
+    .type("application/javascript")
+    .send(
+      `window.FOUNDEROS_CONFIG = Object.freeze(${JSON.stringify({
+        apiBase: process.env.API_BASE_URL || "",
+        clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY || "",
+      })});`,
+    );
+});
+
+app.use(["/health", "/v1"], async (request, response) => {
+  try {
+    const upstreamUrl = new URL(request.originalUrl, backendUrl);
+    const headers = new Headers();
+    for (const name of ["authorization", "content-type", "accept"]) {
+      const value = request.get(name);
+      if (value) headers.set(name, value);
     }
-}));
 
-# API health check
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', service: 'FounderOS Web UI', timestamp: new Date().isoString() });
-});
-
-# API base route (for backend integration)
-app.get('/api', (req, res) => {
-    res.json({
-        endpoint: '/v1/analyze',
-        method: 'POST',
-        description: 'Analyze a startup idea',
-        requiresIdea: true
+    const hasBody = request.method !== "GET" && request.method !== "HEAD";
+    const upstream = await fetch(upstreamUrl, {
+      method: request.method,
+      headers,
+      body: hasBody ? JSON.stringify(request.body ?? {}) : undefined,
     });
+    const body = Buffer.from(await upstream.arrayBuffer());
+    response.status(upstream.status);
+    const contentType = upstream.headers.get("content-type");
+    if (contentType) response.set("Content-Type", contentType);
+    response.send(body);
+  } catch (error) {
+    console.error("Backend proxy request failed:", error);
+    response.status(502).json({ detail: "The FounderOS backend could not be reached." });
+  }
 });
 
-# Catch-all: serve index.html for all other routes (SPA support)
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+app.use(
+  express.static(webDirectory, {
+    index: false,
+    setHeaders: (response, filePath) => {
+      if (/\.(css|js|png|svg|json)$/i.test(filePath) && !filePath.endsWith("config.js")) {
+        response.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      }
+    },
+  }),
+);
+
+app.get("/", (_request, response) => {
+  response.sendFile(path.join(webDirectory, "index.html"));
 });
 
-app.listen(PORT, () => {
-    console.log(`FounderOS Web UI running at http://localhost:${PORT}`);
-    console.log('Press Ctrl+C to stop');
+app.use((request, response) => {
+  if (request.path.startsWith("/v1/") || request.path === "/health") {
+    response.status(404).json({ detail: "API route not found." });
+    return;
+  }
+  response.status(404).send("Not found");
+});
+
+app.listen(port, () => {
+  console.log(`FounderOS website running at http://localhost:${port}`);
+  console.log(`Proxying backend API to ${backendUrl}`);
 });

@@ -4,15 +4,9 @@ The Apple-platform client (iOS first; iPadOS/macOS if the design allows).
 
 ## Status
 
-Empty. Stack not chosen (see the decisions table in the root `README.md`).
-
-## Open questions
-
-- Native SwiftUI, or a cross-platform layer shared with `androidUI/`?
-- Minimum iOS version?
-- iPhone only, or iPad/Mac too?
-- Does a Mac with Xcode exist for builds, or does this need a cloud build path?
-- App Store distribution, or TestFlight/sideload for now?
+This directory contains a native SwiftUI app project, Xcode project, and unit/UI tests. It is source
+code, not a phone-installable package. Building and distributing it requires Xcode and Apple's
+signing flow; no signed IPA, App Store listing, or TestFlight link is currently published.
 
 ## Rules
 

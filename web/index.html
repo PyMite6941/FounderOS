@@ -279,11 +279,16 @@
             AI-powered startup idea analyzer
           </p>
         </div>
-        <button id="themeToggle" class="btn-secondary py-2 px-4 rounded-lg text-sm" aria-label="Toggle light/dark mode">
-          <svg id="themeIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l5 5-1.41 1.41L12 7.83l-4.58 2.83L4.95 13.03l1.41 1.41L12 16.17l7.58-4.72L19.07 10l-4.93 3.2L23 14z"/>
-          </svg>
-        </button>
+        <div class="flex items-center gap-3">
+          <span id="auth-status" class="text-sm text-muted" aria-live="polite">Checking account setup…</span>
+          <button id="sign-in-btn" class="btn-secondary py-2 px-4 rounded-lg text-sm hidden" type="button">Sign in</button>
+          <div id="clerk-user-button" class="hidden"></div>
+          <button id="themeToggle" class="btn-secondary py-2 px-4 rounded-lg text-sm" aria-label="Toggle light/dark mode">
+            <svg id="themeIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l5 5-1.41 1.41L12 7.83l-4.58 2.83L4.95 13.03l1.41 1.41L12 16.17l7.58-4.72L19.07 10l-4.93 3.2L23 14z"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -329,7 +334,20 @@
       <div id="result-content">
         <!-- Filled in by JS -->
       </div>
+      <button id="save-idea-btn" class="btn-secondary mt-6 hidden" type="button">Save this idea</button>
+      <p id="save-idea-status" class="text-sm text-muted mt-2" aria-live="polite"></p>
     </div>
+
+    <section id="saved-ideas" class="rounded-xl p-6 border-y border-border hidden mb-4">
+      <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 class="section-title mb-1">Your saved ideas</h2>
+          <p class="text-sm text-muted">Your ideas stay synced to your account.</p>
+        </div>
+        <button id="refresh-ideas-btn" class="btn-secondary py-2 px-4 rounded-lg text-sm" type="button">Refresh</button>
+      </div>
+      <div id="saved-ideas-list" class="space-y-3" aria-live="polite"></div>
+    </section>
     
     <!-- Error State -->
     <div id="error" class="rounded-xl p-6 border-y border-border hidden" style="border-color: var(--error);">
@@ -347,29 +365,22 @@
     <!-- Download Section -->
     <div id="downloads" class="mt-8 rounded-xl p-6 border-y border-border transition-all Duration=300ms" style="background: var(--card); border-color: var(--border);">
       <h2 class="section-title mb-4">Mobile Apps</h2>
-      <p class="text-muted mb-4">FounderOS is available on mobile devices. Download the app for your platform:</p>
+      <p class="text-muted mb-4">Browse the Android and iOS source projects. Phone installers will appear when distributable builds are published.</p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Android Download -->
         <div class="card" style="background: var(--accent-dim);">
           <div class="flex items-center justify-between mb-3">
             <div>
               <h3 class="font-semibold text-accent">Android App</h3>
-              <p class="text-sm text-muted">Android APK download</p>
+              <p id="android-release-status" class="text-sm text-muted">Checking for a published APK…</p>
             </div>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-muted" id="androidArrow"><path d="M7 10l5 5 5-5"/><path d="M0 6h24v2H0V6z" fill="none"/></svg>
           </div>
-          <div id="android-setup" class="hidden pt-3" style="color: var(--fg);">
-            <p class="text-sm text-muted mb-2">Setup information:</p>
-            <ul class="text-sm text-muted space-y-1">
-              <li>Requires Android 7.0 or later</li>
-              <li>Install from APK (manual install required)</li>
-              <li>Enable "Unknown sources" in device settings for APK installation</li>
-            </ul>
-          </div>
           <button id="android-download-btn" class="btn-primary w-full py-3 rounded-xl font-medium mt-3" disabled>
-            <span id="android-btn-text">Download APK</span>
+            <span id="android-btn-text">APK release not published</span>
             <span id="android-spinner" class="spinner ml-2 hidden" style="width: 16px; height: 16px;"></span>
           </button>
+          <a class="mt-3 block text-center text-sm text-accent underline-offset-4 hover:underline" href="https://github.com/PyMite6941/FounderOS/tree/main/androidUI" target="_blank" rel="noopener noreferrer">View Android source project</a>
         </div>
 
         <!-- iOS Download -->
@@ -377,36 +388,97 @@
           <div class="flex items-center justify-between mb-3">
             <div>
               <h3 class="font-semibold text-accent" style="color: #007aff;">iOS App</h3>
-              <p class="text-sm text-muted">iOS App Store / TestFlight</p>
+              <p id="ios-release-status" class="text-sm text-muted">Checking for an App Store or TestFlight link…</p>
             </div>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-muted" id="iosArrow"><path d="M7 10l5 5 5-5"/><path d="M0 6h24v2H0V6z" fill="none"/></svg>
           </div>
-          <div id="ios-setup" class="hidden pt-3" style="color: var(--fg);">
-            <p class="text-sm text-muted mb-2">Setup information:</p>
-            <ul class="text-sm text-muted space-y-1">
-              <li>iOS 13.0 or later required</li>
-              <li>Available on App Store or via TestFlight</li>
-              <li>App uses device-scoped JWT tokens for authentication</li>
-            </ul>
-          </div>
           <button id="ios-download-btn" class="btn-primary w-full py-3 rounded-xl font-medium mt-3" disabled>
-            <span id="ios-btn-text">View App Details</span>
+            <span id="ios-btn-text">TestFlight link not set</span>
             <span id="ios-spinner" class="spinner ml-2 hidden" style="width: 16px; height: 16px;"></span>
           </button>
+          <a class="mt-3 block text-center text-sm text-accent underline-offset-4 hover:underline" href="https://github.com/PyMite6941/FounderOS/tree/main/appleUI" target="_blank" rel="noopener noreferrer">View iOS source project</a>
         </div>
       </div>
+      <p class="mt-4 text-center text-sm text-muted">
+        Source code is not an installable phone app.
+        <a class="text-accent underline-offset-4 hover:underline" href="https://github.com/PyMite6941/FounderOS/archive/refs/heads/main.zip" target="_blank" rel="noopener noreferrer">Download the repository source ZIP</a>
+        (includes both projects).
+      </p>
     </div>
   </div>
 
+  <script src="/config.js"></script>
   <script>
-    // Check if we're running locally or via the backend
-    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? 'http://127.0.0.1:8787'  // Local backend
-      : '';  // Production - relative path
+    const API_BASE = (window.FOUNDEROS_CONFIG?.apiBase || '').replace(/\/$/, '');
+    const CLERK_PUBLISHABLE_KEY = window.FOUNDEROS_CONFIG?.clerkPublishableKey || '';
+    const form = document.getElementById('idea-form');
+    const ideaInput = document.getElementById('idea-input');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const loadingDiv = document.getElementById('loading');
+    const errorDiv = document.getElementById('error');
+    const errorMsg = document.getElementById('error-msg');
+    const resultsDiv = document.getElementById('results');
+    const resultContent = document.getElementById('result-content');
+    const authStatus = document.getElementById('auth-status');
+    const signInButton = document.getElementById('sign-in-btn');
+    const userButtonContainer = document.getElementById('clerk-user-button');
+    const savedIdeasSection = document.getElementById('saved-ideas');
+    const savedIdeasList = document.getElementById('saved-ideas-list');
+    let clerkInstance = null;
+    let currentIdea = '';
+    let currentAnalysis = null;
+    let previousSignedInState = null;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[character]);
+    }
+
+    async function apiRequest(path, options = {}) {
+      const { authenticated = false, ...requestOptions } = options;
+      const headers = new Headers(requestOptions.headers || {});
+      if (requestOptions.body && !headers.has('Content-Type')) {
+        headers.set('Content-Type', 'application/json');
+      }
+      if (authenticated) {
+        if (!clerkInstance?.isSignedIn || !clerkInstance.session) {
+          throw new Error('Sign in to continue.');
+        }
+        const token = await clerkInstance.session.getToken();
+        if (!token) throw new Error('Could not retrieve your Clerk session.');
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+
+      const response = await fetch(`${API_BASE}${path}`, {
+        ...requestOptions,
+        headers,
+      });
+      const responseText = await response.text();
+      let data = null;
+      if (responseText) {
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          data = { detail: responseText };
+        }
+      }
+      if (!response.ok) {
+        throw new Error(data?.detail || data?.error || `Request failed (${response.status}).`);
+      }
+      return data;
+    }
 
     // Theme management
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const htmlEl = document.documentElement;
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
     
     // Set initial theme
     if (prefersDark || !localStorage.getItem('theme') || localStorage.getItem('theme') === 'dark') {
@@ -420,9 +492,6 @@
     }
 
     // Theme toggle functionality
-    const themeToggle = document.getElementById('themeToggle');
-    const themeIcon = document.getElementById('themeIcon');
-    
     themeToggle.addEventListener('click', () => {
       if (htmlEl.classList.contains('dark-mode')) {
         htmlEl.classList.remove('dark-mode');
@@ -468,21 +537,21 @@
 
     // Render results with animations
     function renderResults(analysis) {
-      const startupName = analysis.startupName || 'Unnamed Startup';
-      const tagline = analysis.tagline || '';
-      const problem = analysis.problem || '';
-      const solution = analysis.solution || '';
+      const startupName = escapeHtml(analysis.startupName || 'Unnamed Startup');
+      const tagline = escapeHtml(analysis.tagline || '');
+      const problem = escapeHtml(analysis.problem || '');
+      const solution = escapeHtml(analysis.solution || '');
       const mvpFeatures = analysis.mvpFeatures || [];
-      const businessModel = analysis.businessModel || '';
-      const nextStep = analysis.nextStep || '';
+      const businessModel = escapeHtml(analysis.businessModel || '');
+      const nextStep = escapeHtml(analysis.nextStep || '');
       const targetUsers = analysis.targetUsers || [];
       
       // Generate tech stack based on the analysis
       const techStack = generateTechStack(analysis);
       
-      const tagsHtml = targetUsers.map(u => `<span class="tag">${u}</span>`).join('');
+      const tagsHtml = targetUsers.map(u => `<span class="tag">${escapeHtml(u)}</span>`).join('');
       
-      const featuresHtml = mvpFeatures.map(f => `<li>${f}</li>`).join('') || '<li class="text-muted">No MVP features specified</li>';
+      const featuresHtml = mvpFeatures.map(f => `<li>${escapeHtml(f)}</li>`).join('') || '<li class="text-muted">No MVP features specified</li>';
       
       resultContent.innerHTML = `
         <div class="grid lg:grid-cols-2 gap-8 animate-in">
@@ -513,7 +582,7 @@
             <div class="mt-6">
               <h3 class="font-semibold mb-3 text-accent">Suggested Tech Stack</h3>
               <div class="grid grid-cols-2 gap-2">
-                ${techStack.map(tech => `<span class="tag">${tech}</span>`).join('')}
+                ${techStack.map(tech => `<span class="tag">${escapeHtml(tech)}</span>`).join('')}
               </div>
             </div>
             
@@ -533,11 +602,11 @@
             <div class="mt-8 p-4 rounded-xl bg-secondary">
               <p class="font-medium mb-2">Recommended Architecture</p>
               <p class="text-sm mono line-height-relaxed">
-                • Frontend: React + TypeScript + Vite<br>
-                • Backend: Node.js + FastAPI or Go<br>
-                • Database: PostgreSQL or MongoDB<br>
-                • API: RESTful + JSON Web Tokens<br>
-                • Deployment: Docker + Vercel/Render
+                • Web: HTML, JavaScript, and Tailwind CSS<br>
+                • Backend: FastAPI<br>
+                • Mobile: Native SwiftUI and Kotlin<br>
+                • Identity: Clerk<br>
+                • Saved ideas: persistent SQLite storage
               </p>
             </div>
           </div>
@@ -557,6 +626,12 @@
       
       resultsDiv.classList.remove('hidden');
       resultsDiv.classList.add('result-card');
+      currentAnalysis = analysis;
+      const saveButton = document.getElementById('save-idea-btn');
+      saveButton.classList.toggle('hidden', !clerkInstance?.isSignedIn);
+      saveButton.disabled = false;
+      saveButton.textContent = 'Save this idea';
+      document.getElementById('save-idea-status').textContent = '';
     }
 
     // Generate tech stack based on idea content
@@ -615,138 +690,254 @@
       return stack.slice(0, 6);
     }
 
-    // Analyze idea
+    async function loadClerkScript(source, publishableKey) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = source;
+        script.async = true;
+        script.crossOrigin = 'anonymous';
+        if (publishableKey) script.dataset.clerkPublishableKey = publishableKey;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Could not load Clerk. Check the publishable key and network connection.'));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function initializeClerk() {
+      if (!CLERK_PUBLISHABLE_KEY) {
+        authStatus.textContent = 'Add a Clerk publishable key to enable accounts';
+        return;
+      }
+
+      try {
+        const encodedDomain = CLERK_PUBLISHABLE_KEY.split('_')[2];
+        if (!encodedDomain) throw new Error('The Clerk publishable key is invalid.');
+        const clerkDomain = atob(encodedDomain).slice(0, -1);
+        await loadClerkScript(`https://${clerkDomain}/npm/@clerk/ui@1/dist/ui.browser.js`);
+        await loadClerkScript(
+          `https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`,
+          CLERK_PUBLISHABLE_KEY,
+        );
+        await window.Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
+        clerkInstance = window.Clerk;
+        clerkInstance.addListener(() => { void updateAuthState(); });
+        await updateAuthState();
+      } catch (error) {
+        console.error('Clerk initialization error:', error);
+        authStatus.textContent = error.message;
+      }
+    }
+
+    async function updateAuthState() {
+      const signedIn = Boolean(clerkInstance?.isSignedIn);
+      signInButton.classList.toggle('hidden', signedIn);
+      userButtonContainer.classList.toggle('hidden', !signedIn);
+      savedIdeasSection.classList.toggle('hidden', !signedIn);
+      document.getElementById('save-idea-btn').classList.toggle('hidden', !signedIn || !currentAnalysis);
+
+      if (signedIn) {
+        authStatus.textContent = 'Signed in';
+        if (!userButtonContainer.hasChildNodes()) clerkInstance.mountUserButton(userButtonContainer);
+        if (previousSignedInState !== true) await loadSavedIdeas();
+      } else {
+        authStatus.textContent = 'Sign in to save ideas';
+      }
+      previousSignedInState = signedIn;
+    }
+
+    async function checkAPI() {
+      try {
+        await apiRequest('/health');
+        return true;
+      } catch (error) {
+        showError('Backend API is unavailable. Check the API_BASE_URL configuration and backend service.');
+        console.error('Backend health check failed:', error);
+        return false;
+      }
+    }
+
     async function analyzeIdea(event) {
       event.preventDefault();
-      
       const idea = ideaInput.value.trim();
       if (!idea) return;
-      
+
       hideError();
       setLoading(true);
-      
       try {
-        const res = await fetch(`${API_BASE}/v1/analyze`, {
+        const data = await apiRequest('/v1/analyze', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({ idea }),
         });
-        
-        if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error || `Server error: ${res.status}`);
-        }
-        
-        const data = await res.json();
+        currentIdea = idea;
         renderResults(data.analysis);
-      } catch (err) {
-        console.error('Analysis error:', err);
-        showError(err.message || 'Failed to analyze idea. Please try again.');
+      } catch (error) {
+        console.error('Analysis error:', error);
+        showError(error.message || 'Failed to analyze idea. Please try again.');
       } finally {
         setLoading(false);
       }
     }
 
-    // Clear form
     function clearForm() {
       ideaInput.value = '';
+      currentIdea = '';
+      currentAnalysis = null;
       resultsDiv.classList.add('hidden');
-      errorDiv.classList.add('hidden');
+      document.getElementById('save-idea-btn').classList.add('hidden');
+      document.getElementById('save-idea-status').textContent = '';
+      hideError();
     }
 
-    // Event listeners
+    async function saveCurrentIdea() {
+      const saveButton = document.getElementById('save-idea-btn');
+      const status = document.getElementById('save-idea-status');
+      if (!currentIdea || !currentAnalysis) return;
+      saveButton.disabled = true;
+      status.textContent = 'Saving…';
+      try {
+        const saved = await apiRequest('/v1/ideas', {
+          method: 'POST',
+          authenticated: true,
+          body: JSON.stringify({ idea: currentIdea }),
+        });
+        currentAnalysis = saved.analysis;
+        renderResults(saved.analysis);
+        status.textContent = 'Saved to your account.';
+        await loadSavedIdeas();
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        saveButton.disabled = false;
+      }
+    }
+
+    function renderSavedIdeas(ideas) {
+      savedIdeasList.replaceChildren();
+      if (ideas.length === 0) {
+        savedIdeasList.textContent = 'No saved ideas yet. Analyze an idea and save it here.';
+        return;
+      }
+
+      for (const item of ideas) {
+        const card = document.createElement('article');
+        card.className = 'card flex flex-wrap items-center justify-between gap-3';
+        const details = document.createElement('div');
+        const title = document.createElement('h3');
+        title.className = 'font-semibold';
+        title.textContent = item.analysis?.startupName || 'Saved startup idea';
+        const preview = document.createElement('p');
+        preview.className = 'text-sm text-muted mt-1';
+        preview.textContent = item.idea;
+        const date = document.createElement('p');
+        date.className = 'text-xs text-muted mt-2';
+        date.textContent = new Date(item.createdAt).toLocaleString();
+        details.append(title, preview, date);
+
+        const actions = document.createElement('div');
+        actions.className = 'flex gap-2';
+        const openButton = document.createElement('button');
+        openButton.className = 'btn-secondary py-2 px-3 rounded-lg text-sm';
+        openButton.type = 'button';
+        openButton.textContent = 'Open';
+        openButton.addEventListener('click', () => {
+          currentIdea = item.idea;
+          currentAnalysis = item.analysis;
+          ideaInput.value = item.idea;
+          renderResults(item.analysis);
+          resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'btn-secondary py-2 px-3 rounded-lg text-sm';
+        deleteButton.type = 'button';
+        deleteButton.textContent = 'Delete';
+        deleteButton.addEventListener('click', async () => {
+          deleteButton.disabled = true;
+          try {
+            await apiRequest(`/v1/ideas/${encodeURIComponent(item.id)}`, {
+              method: 'DELETE',
+              authenticated: true,
+            });
+            await loadSavedIdeas();
+          } catch (error) {
+            deleteButton.disabled = false;
+            savedIdeasList.textContent = error.message;
+          }
+        });
+        actions.append(openButton, deleteButton);
+        card.append(details, actions);
+        savedIdeasList.append(card);
+      }
+    }
+
+    async function loadSavedIdeas() {
+      savedIdeasList.textContent = 'Loading saved ideas…';
+      try {
+        const data = await apiRequest('/v1/ideas', { authenticated: true });
+        renderSavedIdeas(data.ideas);
+      } catch (error) {
+        savedIdeasList.textContent = error.message;
+      }
+    }
+
+    function updateReleaseCard(platform, release) {
+      const isAndroid = platform === 'android';
+      const status = document.getElementById(`${platform}-release-status`);
+      const button = document.getElementById(`${platform}-download-btn`);
+      const buttonText = document.getElementById(`${platform}-btn-text`);
+      const downloadUrl = release?.downloadUrl;
+      let secureUrl = null;
+      if (downloadUrl) {
+        try {
+          const parsedUrl = new URL(downloadUrl);
+          if (parsedUrl.protocol === 'https:') secureUrl = parsedUrl.href;
+        } catch {
+          secureUrl = null;
+        }
+      }
+
+      button.disabled = !release?.available || !secureUrl;
+      if (button.disabled) {
+        status.textContent = isAndroid
+          ? 'Android source is available below; no installable APK release is published yet.'
+          : 'iOS source is available below; no signed App Store or TestFlight build is linked yet.';
+        buttonText.textContent = isAndroid ? 'APK release not published' : 'TestFlight link not set';
+        return;
+      }
+
+      status.textContent = `${release.channel || (isAndroid ? 'GitHub Release' : 'iOS')}${release.version ? ` · ${release.version}` : ''}`;
+      buttonText.textContent = isAndroid ? 'Download APK' : `Open ${release.channel || 'iOS app'}`;
+      button.onclick = () => window.open(secureUrl, '_blank', 'noopener,noreferrer');
+    }
+
+    async function loadReleaseCatalog() {
+      try {
+        const releases = await apiRequest('/v1/apps/releases');
+        updateReleaseCard('android', releases.android);
+        updateReleaseCard('ios', releases.ios);
+      } catch (error) {
+        for (const platform of ['android', 'ios']) {
+          document.getElementById(`${platform}-release-status`).textContent = 'Release information could not be loaded.';
+          document.getElementById(`${platform}-download-btn`).disabled = true;
+        }
+        console.error('Could not load app releases:', error);
+      }
+    }
+
+    signInButton.addEventListener('click', async () => {
+      try {
+        await clerkInstance?.openSignIn();
+      } catch (error) {
+        authStatus.textContent = error.message;
+      }
+    });
+    document.getElementById('save-idea-btn').addEventListener('click', saveCurrentIdea);
+    document.getElementById('refresh-ideas-btn').addEventListener('click', loadSavedIdeas);
     form.addEventListener('submit', analyzeIdea);
     clearBtn.addEventListener('click', clearForm);
-    
-    // Initialize
-    checkAPI().then(available => {
-      if (!available) {
-        showError('Backend API not running. Please start the backend server at http://127.0.0.1:8787');
-      }
-    });
 
-    // Download functionality
-    async function checkAndDownload(platform) {
-      const isAndroid = platform === 'android';
-      const btnText = document.getElementById(`android-btn-text`);
-      const btnSpinner = document.getElementById(`android-spinner`);
-      const iosBtnText = document.getElementById('ios-btn-text');
-      const iosSpinner = document.getElementById('ios-spinner');
-      const androidSetup = document.getElementById('android-setup');
-      const iosSetup = document.getElementById('ios-setup');
-      const androidBackend = document.getElementById('android-backend-url');
-      const iosBackend = document.getElementById('ios-backend-url');
-      const androidBtn = document.getElementById('android-download-btn');
-      const iosBtn = document.getElementById('ios-download-btn');
-      
-      if (isAndroid) {
-        btnSpinner.classList.remove('hidden');
-        androidBtn.disabled = true;
-        androidBtn.textContent = 'Preparing...';
-      } else {
-        iosSpinner.classList.remove('hidden');
-        iosBtn.disabled = true;
-        iosBtn.textContent = 'Loading...';
-      }
-      
-      try {
-        // Show setup information popup
-        if (isAndroid) {
-          androidSetup.classList.remove('hidden');
-          androidBackend.textContent = 'http://127.0.0.1:8787';
-          // Show Android APK download confirmation
-          if (confirm('Download FounderOS Android APK?\n\nRequires Android 7.0+\n\nConnect to backend at: 127.0.0.1:8787\n\nEnable "Unknown sources" in device settings for APK installation')) {
-            // Simulate APK download
-            androidBtn.textContent = 'Downloading...';
-            androidBtn.disabled = true;
-            // In a real app, this would trigger an actual download
-            setTimeout(() => {
-              androidBtn.textContent = 'Downloaded!';
-              setTimeout(() => {
-                androidBtn.textContent = 'Download APK';
-                androidBtn.disabled = false;
-                androidSetup.classList.add('hidden');
-              }, 2000);
-            }, 1500);
-          }
-        } else {
-          iosSetup.classList.remove('hidden');
-          iosBackend.textContent = 'http://127.0.0.1:8787';
-          // Show iOS app details
-          alert('FounderOS iOS App\n\n• iOS 13.0 or later required\n• Available on App Store or via TestFlight\n• Connects to backend at: 127.0.0.1:8787\n• Uses device-scoped JWT tokens for authentication\n\nView on App Store or request TestFlight access?');
-        }
-      } catch (err) {
-        console.error('Download error:', err);
-        if (isAndroid) {
-          alert('Failed to process Android download. Please try again.');
-        } else {
-          alert('Failed to load iOS app details. Please try again.');
-        }
-      } finally {
-        if (isAndroid) {
-          btnSpinner.classList.add('hidden');
-          androidBtn.disabled = false;
-          androidBtn.textContent = 'Download APK';
-        } else {
-          iosSpinner.classList.add('hidden');
-          iosBtn.disabled = false;
-          iosBtn.textContent = 'View App Details';
-        }
-      }
-    }
-
-    // Event listeners for download buttons
-    document.getElementById('android-download-btn').addEventListener('click', () => checkAndDownload('android'));
-    document.getElementById('ios-download-btn').addEventListener('click', () => checkAndDownload('ios'));
-
-    // Initialize
-    checkAPI().then(available => {
-      if (!available) {
-        showError('Backend API not running. Please start the backend server at http://127.0.0.1:8787');
-      }
-    });
+    void initializeClerk();
+    void checkAPI();
+    void loadReleaseCatalog();
   </script>
 </body>
 </html>

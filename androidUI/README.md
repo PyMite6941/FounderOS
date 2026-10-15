@@ -3,14 +3,9 @@ The Android client.
 
 ## Status
 
-Android CI/CD pipeline configured. Backend API (`POST /v1/analyze`) is operational. Android app skeleton ready for Compose implementation.
-
-## Open questions
-
-- Native Kotlin + Jetpack Compose, or a cross-platform layer shared with `appleUI/`? → Will evaluate after initial Android MVP
-- Minimum SDK level? → Targeting API 21 (Android 5.0) and up
-- Phone only, or tablet layouts too? → Phone first, tablet adaptive layouts later
-- Play Store distribution, or APK sideload for now? → Sideload for now, Play Store later
+Kotlin source files are present under `app/src/main/java`. This directory is currently source code,
+not a buildable or installable Android app: it has no Gradle project, wrapper, manifest, or app
+entry point. No APK is published yet.
 
 ## Rules
 
@@ -20,6 +15,6 @@ Android CI/CD pipeline configured. Backend API (`POST /v1/analyze`) is operation
 
 ## CI/CD
 
-GitHub Actions workflow at `.github/workflows/android-ci.yml` handles:
-- CI: Build debug APK, run unit tests, lint checks, upload debug APK artifact
-- CD: Build signed AAB for release, upload AAB artifact (requires keystore secrets)
+The workflow at `.github/workflows/android-ci.yml` is not currently wired to this source tree: it
+expects a root-level Gradle project and wrapper that are not present. Its artifact upload action is
+also deprecated. It has not produced an installable APK release.
