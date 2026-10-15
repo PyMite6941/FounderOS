@@ -9,8 +9,6 @@ services:
     healthCheckPath: /health
     autoDeploy: true
     envVars:
-      - key: MONGODB_URI
-        sync: false
       - key: DATABASE_PATH
         value: /app/data/foundoros.sqlite3
       - key: CLERK_ISSUER
