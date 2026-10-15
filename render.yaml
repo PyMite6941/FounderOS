@@ -11,6 +11,8 @@ services:
     envVars:
       - key: DATABASE_PATH
         value: /app/data/foundoros.sqlite3
+      - key: STORAGE_BACKEND
+        value: sqlite
       - key: CLERK_ISSUER
         sync: false
       - key: WEB_ORIGINS

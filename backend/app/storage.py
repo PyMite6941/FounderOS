@@ -9,6 +9,10 @@ from functools import lru_cache
 from pathlib import Path
 
 
+def _storage_backend() -> str | None:
+    return os.environ.get("STORAGE_BACKEND", "").strip().lower() if os.environ.get("STORAGE_BACKEND") else None
+
+
 def _mongo_uri() -> str | None:
     for key in ("MONGODB_URI", "MONGO_URI"):
         value = os.environ.get(key, "").strip()
@@ -278,11 +282,21 @@ def get_conversation_messages(conversation_id: str) -> list[dict]:
 
 
 def check_database() -> None:
+    # Use SQLite if STORAGE_BACKEND is set to sqlite, otherwise try MongoDB
+    if _storage_backend() == "sqlite":
+        with _sqlite_connection():
+            pass
+        return
+
     database = _mongo_database()
     if database is not None:
-        database.client.admin.command("ping")
-        database.saved_ideas.create_index([("userId", 1), ("createdAt", -1)])
-        database.conversations.create_index([("userId", 1), ("createdAt", -1)])
+        try:
+            database.client.admin.command("ping")
+            database.saved_ideas.create_index([("userId", 1), ("createdAt", -1)])
+            database.conversations.create_index([("userId", 1), ("createdAt", -1)])
+        except Exception:
+            # MongoDB ping failed (e.g. SSL handshake error); fall back to SQLite
+            pass
         return
 
     with _sqlite_connection():
@@ -290,4 +304,6 @@ def check_database() -> None:
 
 
 def database_backend() -> str:
+    if _storage_backend() == "sqlite":
+        return "sqlite"
     return "mongodb" if _mongo_uri() else "sqlite"
